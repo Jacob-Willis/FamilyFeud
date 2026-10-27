@@ -357,8 +357,31 @@ namespace FamilyFeud.Services
 
         public void ResetScores()
         {
+            ClearScores();
+            NotifyStateChanged();
+        }
+
+        private void ClearScores()
+        {
             Team1.Score = 0;
             Team2.Score = 0;
+        }
+
+        // Clears all game state so the next game starts fresh (used when the host goes back to the start screen).
+        // The loaded Questions cache is kept; the Game page rebuilds its remaining-questions pool from it.
+        public void ResetGame()
+        {
+            ClearScores();
+            // face-off answers, strikes, Play/Pass choice, round pool and mode back to PlayOff
+            ResetPlayoffState();
+            IsRoundFinished = false;
+            // no current question means the next SetCurrentQuestion is the first one, so it won't flip StartingTeam
+            CurrentQuestion = null;
+            _revealedAnswers.Clear();
+            WhichTeamsTurn = SelectedTeam.Random;
+            StartingTeam = SelectedTeam.Random;
+            Team1.Name = "Team 1";
+            Team2.Name = "Team 2";
             NotifyStateChanged();
         }
 
