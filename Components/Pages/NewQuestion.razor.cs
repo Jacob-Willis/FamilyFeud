@@ -206,13 +206,19 @@ namespace FamilyFeud.Components.Pages
                     question.Id = QuestionId.Value;
                     await HasuraService.UpdateQuestionAsync(question);
 
-                    // Update local state
-                    var existingQuestion = GameState.Questions.FirstOrDefault(q => q.Id == QuestionId.Value);
-                    if (existingQuestion != null)
+                    // Update local state only if the game has already loaded questions;
+                    // otherwise the Game page loads everything from Hasura later.
+                    if (GameState.Questions.Count > 0)
                     {
-                        existingQuestion.QuestionText = question.QuestionText;
-                        existingQuestion.Category = question.Category;
-                        existingQuestion.Answers = question.Answers;
+                        Question? existingQuestion = GameState.Questions.FirstOrDefault(q => q.Id == QuestionId.Value);
+                        if (existingQuestion != null)
+                        {
+                            // Reload so new answers get their real database IDs (form-built answers have Id 0)
+                            Question source = await ReloadQuestionAsync(QuestionId.Value) ?? question;
+                            existingQuestion.QuestionText = source.QuestionText;
+                            existingQuestion.Category = source.Category;
+                            existingQuestion.Answers = source.Answers;
+                        }
                     }
 
                     _message = $"Question updated successfully!";
@@ -227,7 +233,15 @@ namespace FamilyFeud.Components.Pages
                     {
                         // Update local state with returned id and add to shared GameState
                         question.Id = createdId;
-                        GameState.Questions.Add(question);
+
+                        // Only add to the shared list if the game has already loaded questions.
+                        // Adding to an empty list would stop the Game page loading the rest from Hasura.
+                        if (GameState.Questions.Count > 0)
+                        {
+                            // Reload so the answers have their real database IDs (form-built answers have Id 0)
+                            Question savedQuestion = await ReloadQuestionAsync(createdId) ?? question;
+                            GameState.Questions.Add(savedQuestion);
+                        }
 
                         _message = $"Question created successfully (ID: {createdId})!";
                         _isSuccess = true;
@@ -255,6 +269,23 @@ namespace FamilyFeud.Components.Pages
             {
                 _isLoading = false;
                 StateHasChanged();
+            }
+        }
+
+        /// <summary>
+        /// Reloads a saved question from Hasura so its answers carry their real database IDs.
+        /// Returns null if the reload fails; the save itself has already succeeded.
+        /// </summary>
+        private async Task<Question?> ReloadQuestionAsync(int questionId)
+        {
+            try
+            {
+                return await HasuraService.GetQuestionAsync(questionId);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reloading question {questionId}: {ex}");
+                return null;
             }
         }
 
