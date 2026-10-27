@@ -61,23 +61,19 @@ namespace FamilyFeud.Services
             }
             // reset playoff state for the new question
             ResetPlayoffState();
-
-            // Only alternate StartingTeam for subsequent questions, not the first one
-            if (!isFirstQuestion)
-            {
-                // switch StartingTeam to the other team for the new question
-                if (StartingTeam == SelectedTeam.Team2)
-                {
-                    StartingTeam = SelectedTeam.Team1;
-                    SwitchTeam(SelectedTeam.Team1);
-                }
-                else
-                {
-                    StartingTeam = SelectedTeam.Team2;
-                    SwitchTeam(SelectedTeam.Team2);
-                }
-            }
             IsRoundFinished = false;  // New round, so it's not finished
+
+            if (q != null)
+            {
+                // Alternate StartingTeam for every question after the first one
+                if (!isFirstQuestion)
+                {
+                    StartingTeam = StartingTeam == SelectedTeam.Team2 ? SelectedTeam.Team1 : SelectedTeam.Team2;
+                }
+
+                // every face-off starts with the starting team
+                SwitchTeam(StartingTeam);
+            }
             NotifyStateChanged();
         }
 
@@ -225,8 +221,7 @@ namespace FamilyFeud.Services
                     RoundPointsTeam1 = 0;
                     RoundPointsTeam2 = 0;
 
-                    // end round: next starter is the opposite team
-                    SwitchTeam();
+                    // end round: the next question sets up the next starting team
                     ResetPlayoffState();
                     IsRoundFinished = true;
                     return;
@@ -294,7 +289,6 @@ namespace FamilyFeud.Services
             {
                 // stealing team failed: do not change scores (points were already awarded to owner on reveal)
                 ResetPlayoffState();
-                SwitchTeam();
                 IsRoundFinished = true;
                 return;
             }
