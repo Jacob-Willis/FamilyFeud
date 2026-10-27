@@ -208,7 +208,7 @@ namespace FamilyFeud.Components.Pages
                 if (pool.Count == 0)
                 {
                     // No questions left in the selected category; fall back to any remaining question (#14)
-                    InfoMessage = $"No questions left in {CategoryLabel(SelectedCategory)}— picked from all categories";
+                    InfoMessage = $"No questions left in {CategoryLabel(SelectedCategory)} — picked from all categories";
                     pool = RemainingQuestions;
                 }
 
