@@ -13,20 +13,26 @@ namespace FamilyFeud.Components.Pages
 
         private const int MaxTargetScore = 10000;
 
-        // Game length chosen on this screen; copied into GameState when the game starts
-        private GameLengthMode LengthMode { get; set; } = GameStateService.DefaultGameLength;
+        // Game length chosen on this screen; copied into GameState when the game starts. Each limit has its own
+        // checkbox and the game ends at whichever ticked limit is reached first. Default: 5 rounds, no target score.
+        private bool UseRounds { get; set; } = true;
+        private bool UseTargetScore { get; set; }
         private int TotalRounds { get; set; } = GameStateService.DefaultTotalRounds;
         private int? TargetScore { get; set; } = GameStateService.DefaultTargetScore;
 
-        // Only checked in target score mode; an empty or out-of-range box blocks Start
+        // At least one limit must be ticked
+        private bool HasGameLength => UseRounds || UseTargetScore;
+
+        // Only checked when Target score is ticked; an empty or out-of-range box blocks Start
         private bool IsTargetScoreValid =>
-            LengthMode != GameLengthMode.TargetScore ||
+            !UseTargetScore ||
             (TargetScore is int target && target >= 1 && target <= MaxTargetScore);
 
-        // Return true when Start should be disabled: missing team names or an invalid target score
+        // Return true when Start should be disabled: missing team names, no game length or an invalid target score
         private bool VerifyStart =>
             string.IsNullOrWhiteSpace(GameState.Team1.Name) ||
             string.IsNullOrWhiteSpace(GameState.Team2.Name) ||
+            !HasGameLength ||
             !IsTargetScoreValid;
 
         private void GoBack()
@@ -72,16 +78,17 @@ namespace FamilyFeud.Components.Pages
 
         private void PlayGame()
         {
-            // Same checks as VerifyStart: both team names and a valid target score
-            if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name) || !IsTargetScoreValid)
+            // Same checks as VerifyStart: both team names, at least one game length limit and a valid target score
+            if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name) || !HasGameLength || !IsTargetScoreValid)
             {
                 // Start is disabled in this case, so this is only a safety net
                 return;
             }
 
-            // the target score is only used in target score mode, so keep the default when the box is unused
-            int targetScore = LengthMode == GameLengthMode.TargetScore && TargetScore is int target ? target : GameStateService.DefaultTargetScore;
-            GameState.SetGameLength(LengthMode, TotalRounds, targetScore);
+            // an unticked limit is passed as null (no limit)
+            int? totalRounds = UseRounds ? TotalRounds : null;
+            int? targetScore = UseTargetScore ? TargetScore : null;
+            GameState.SetGameLength(totalRounds, targetScore);
 
             if (SelectedFirst == SelectedTeam.Random)
             {
