@@ -208,7 +208,7 @@ namespace FamilyFeud.Services
                     }
                     else
                     {
-                        Team2.Score = Math.Max(0, Team1.Score - stolenAmount);
+                        Team2.Score = Math.Max(0, Team2.Score - stolenAmount);
                     }
 
                     // award stolen points and the points for this correct stealing answer to the stealer
