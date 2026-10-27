@@ -200,7 +200,8 @@ namespace FamilyFeud.Components.Pages
                 Question question = new Question
                 {
                     QuestionText = _questionText.Trim(),
-                    Category = string.IsNullOrWhiteSpace(_category) ? null : _category.Trim(),
+                    // Blank means "no category"; the column is NOT NULL, so send "" rather than null (#29).
+                    Category = _category.Trim(),
                     Answers = _answers.Select(a => new Answer
                     {
                         Id = a.Id,

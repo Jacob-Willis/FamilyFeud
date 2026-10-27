@@ -75,7 +75,7 @@ mutation InsertQuestion($question: String!, $category: String, $answers: [answer
             var variables = new
             {
                 question = question.QuestionText,
-                category = question.Category,
+                category = NormalizeCategory(question.Category),
                 answers = answersInput
             };
 
@@ -118,7 +118,7 @@ mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $exist
             {
                 id = question.Id,
                 question = question.QuestionText,
-                category = question.Category,
+                category = NormalizeCategory(question.Category),
                 existingAnswerIds = existingAnswers.Select(a => a.Id).ToList(),
                 answerUpdates = existingAnswers.Select(a => new
                 {
@@ -155,6 +155,15 @@ mutation DeleteQuestion($id: Int!) {
             DeleteQuestionResponse? res = await SendRequestAsync<DeleteQuestionResponse>(req).ConfigureAwait(false);
             // Null means no question had this id (e.g. it was already deleted).
             return res?.DeleteQuestionsByPk != null;
+        }
+
+        /// <summary>
+        /// questions.category is NOT NULL and a blank category means "no category" (#29),
+        /// so null or whitespace becomes "" and anything else is trimmed.
+        /// </summary>
+        private static string NormalizeCategory(string? category)
+        {
+            return category?.Trim() ?? string.Empty;
         }
 
         // Generic request sender with error handling
