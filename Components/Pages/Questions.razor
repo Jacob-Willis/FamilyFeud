@@ -1,4 +1,5 @@
 @page "/questions"
+@using FamilyFeud.Services.Hasura
 
 @* Delete confirmation (#17). In-page modal because browser confirm() isn't reliable in BlazorWebView. *@
 @if (_pendingDelete != null)
@@ -29,7 +30,7 @@
         <input type="text" placeholder="Search questions..." @bind="_searchText" class="ff-search-input" />
         <select @bind="_selectedCategory" class="ff-category-select">
             <option value="">All Categories</option>
-            @foreach (var category in GetUniqueCategories())
+            @foreach (string category in GetUniqueCategories())
             {
                 <option value="@category">@category</option>
             }
@@ -37,22 +38,22 @@
         <button class="ff-search-action-button" @onclick="NewQuestion">New Question</button>
     </div>
     <div class="ff-questions-list">
-        @if (_isLoading)
+        @if (IsLoading)
         {
             <div class="text-muted">Loading questions...</div>
         }
-        else if (!string.IsNullOrEmpty(_errorMessage))
+        else if (!string.IsNullOrEmpty(ErrorMessage))
         {
-            <div class="alert alert-danger">@_errorMessage</div>
+            <div class="alert alert-danger">@ErrorMessage</div>
         }
-        else if (_questions?.Count == 0)
+        else if (AllQuestions?.Count == 0)
         {
             <div class="text-muted">No questions found.</div>
         }
         else
         {
             <div>
-                @foreach (var q in GetFilteredQuestions())
+                @foreach (Question q in GetFilteredQuestions())
                 {
                     <div class="ff-answer-container">
                         <div class="ff-answer-container-heading">
@@ -64,7 +65,7 @@
                             </div>
                         </div>
                         <ul class="ff-answer-container-answers mb-0">
-                            @foreach (var a in q.Answers.OrderByDescending(a => a.Points))
+                            @foreach (Answer a in q.Answers.OrderByDescending(a => a.Points))
                             {
                                 <li>
                                     <span class="ff-answer-container-points">@a.Points</span>

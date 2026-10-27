@@ -1,5 +1,7 @@
+using FamilyFeud.Services;
 using FamilyFeud.Services.Hasura;
 using Microsoft.AspNetCore.Components;
+using System.Diagnostics;
 
 namespace FamilyFeud.Components.Pages
 {
@@ -9,7 +11,7 @@ namespace FamilyFeud.Components.Pages
         private NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
+        private GameStateService GameState { get; set; } = null!;
 
         [Inject]
         private IHasuraService HasuraService { get; set; } = null!;
@@ -19,16 +21,16 @@ namespace FamilyFeud.Components.Pages
         private bool _isDeleting;
         private string _deleteError = string.Empty;
 
-        private bool _isLoading => GameState.IsLoading;
-        private string _errorMessage => GameState.ErrorMessage;
-        private List<Question> _questions => GameState.Questions;
+        private bool IsLoading => GameState.IsLoading;
+        private string ErrorMessage => GameState.ErrorMessage;
+        private List<Question> AllQuestions => GameState.Questions;
 
         private string _searchText = string.Empty;
         private string _selectedCategory = string.Empty;
 
         private List<string> GetUniqueCategories()
         {
-            return _questions
+            return AllQuestions
                 .Where(q => !string.IsNullOrWhiteSpace(q.Category))
                 .Select(q => q.Category!.Trim())
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -38,7 +40,7 @@ namespace FamilyFeud.Components.Pages
 
         private List<Question> GetFilteredQuestions()
         {
-            var filtered = _questions.AsEnumerable();
+            IEnumerable<Question> filtered = AllQuestions.AsEnumerable();
 
             // Filter by search text (case-insensitive substring match on question text)
             if (!string.IsNullOrWhiteSpace(_searchText))
@@ -57,7 +59,7 @@ namespace FamilyFeud.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            if (_questions.Count == 0)
+            if (AllQuestions.Count == 0)
                 await GameState.LoadQuestionsAsync();
         }
 
@@ -121,7 +123,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error deleting question {questionId}: {ex}");
+                Debug.WriteLine($"Error deleting question {questionId}: {ex}");
                 _deleteError = $"Error deleting question: {ex.Message}";
             }
             finally

@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FamilyFeud.Services;
+using FamilyFeud.Services.Hasura;
+using Microsoft.Extensions.Logging;
+using System.Net.Http.Headers;
 
 namespace FamilyFeud
 {
@@ -15,24 +18,24 @@ namespace FamilyFeud
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            // Register application state service for teams and scores (inject Hasura service)
-            builder.Services.AddSingleton<FamilyFeud.Services.GameStateService>(sp =>
-                new FamilyFeud.Services.GameStateService(sp.GetRequiredService<FamilyFeud.Services.Hasura.IHasuraService>()));
+            // Shared game state (singleton, so the host and audience windows see the same game)
+            builder.Services.AddSingleton<GameStateService>(sp =>
+                new GameStateService(sp.GetRequiredService<IHasuraService>()));
 
             // Register Hasura GraphQL service and HttpClient
             // Endpoint and admin secret come from appsettings.json (git-ignored) - see appsettings.example.json
-            builder.Services.AddSingleton<FamilyFeud.Services.Hasura.IHasuraService>(sp =>
+            builder.Services.AddSingleton<IHasuraService>(sp =>
             {
-                FamilyFeud.Services.Hasura.HasuraSettings settings = FamilyFeud.Services.Hasura.HasuraSettings.Load();
-                HttpClient client = new System.Net.Http.HttpClient();
+                HasuraSettings settings = HasuraSettings.Load();
+                HttpClient client = new HttpClient();
                 client.BaseAddress = new Uri(settings.Endpoint);
-                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("x-hasura-role", "app_full_access");
                 if (!string.IsNullOrEmpty(settings.AdminSecret))
                 {
                     client.DefaultRequestHeaders.Add("x-hasura-admin-secret", settings.AdminSecret);
                 }
-                return new FamilyFeud.Services.Hasura.HasuraService(client);
+                return new HasuraService(client);
             });
 
 #if DEBUG

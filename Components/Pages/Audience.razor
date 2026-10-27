@@ -1,6 +1,7 @@
 @using FamilyFeud.Services
+@using FamilyFeud.Services.Hasura
 @implements IDisposable
-@inject FamilyFeud.Services.GameStateService GameState
+@inject GameStateService GameState
 
 @code {
     protected override void OnInitialized()
@@ -65,9 +66,9 @@ else
             </div>
             <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
             <div class="ff-answer-box">
-                @foreach (var a in GameState.CurrentQuestion.Answers)
+                @foreach (Answer a in GameState.CurrentQuestion.Answers)
                 {
-                    var revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
+                    bool revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
                     <div @key="@(GameState.CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item audience-item @(revealed ? "revealed" : "hidden")">
                         <div class="answer-text">@a.AnswerText</div>
                         <div class="answer-points">@a.Points</div>

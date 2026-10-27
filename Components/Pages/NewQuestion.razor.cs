@@ -1,6 +1,7 @@
 using FamilyFeud.Services;
 using FamilyFeud.Services.Hasura;
 using Microsoft.AspNetCore.Components;
+using System.Diagnostics;
 
 namespace FamilyFeud.Components.Pages
 {
@@ -58,7 +59,7 @@ namespace FamilyFeud.Components.Pages
                 _isLoading = true;
                 StateHasChanged();
 
-                var question = await HasuraService.GetQuestionAsync(questionId);
+                Question? question = await HasuraService.GetQuestionAsync(questionId);
                 if (question != null)
                 {
                     _questionText = question.QuestionText;
@@ -81,7 +82,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading question: {ex}");
+                Debug.WriteLine($"Error loading question: {ex}");
                 _message = $"Error loading question: {ex.Message}";
                 _isLoading = false;
             }
@@ -111,7 +112,7 @@ namespace FamilyFeud.Components.Pages
                     questions = await HasuraService.GetQuestionsAsync();
                 }
 
-                var cats = questions
+                List<string> cats = questions
                     .Where(q => !string.IsNullOrWhiteSpace(q.Category))
                     .Select(q => q.Category!.Trim())
                     .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -122,7 +123,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading categories: {ex}");
+                Debug.WriteLine($"Error loading categories: {ex}");
                 _categories = new List<string>();
             }
         }
@@ -158,7 +159,8 @@ namespace FamilyFeud.Components.Pages
 
         private async Task UpdateAnswerOrder()
         {
-            await Task.Delay(100); // Debounce delay
+            // Short fixed pause before re-sorting. Nothing is debounced: every change waits and then re-sorts.
+            await Task.Delay(100);
             _answers = _answers.OrderByDescending(a => a.Points).ThenBy(a => a.AnswerText).ToList();
             StateHasChanged();
         }
@@ -182,7 +184,7 @@ namespace FamilyFeud.Components.Pages
             }
 
             // Validate that all answers have non-empty text and points > 0
-            var invalidAnswers = _answers.Where(a => string.IsNullOrWhiteSpace(a.AnswerText) || a.Points <= 0).ToList();
+            List<AnswerInput> invalidAnswers = _answers.Where(a => string.IsNullOrWhiteSpace(a.AnswerText) || a.Points <= 0).ToList();
             if (invalidAnswers.Count > 0)
             {
                 _message = "All answers must have text and points greater than 0.";
@@ -195,7 +197,7 @@ namespace FamilyFeud.Components.Pages
                 StateHasChanged();
 
                 // Build Question object from form data
-                var question = new Question
+                Question question = new Question
                 {
                     QuestionText = _questionText.Trim(),
                     Category = string.IsNullOrWhiteSpace(_category) ? null : _category.Trim(),
@@ -291,7 +293,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error reloading question {questionId}: {ex}");
+                Debug.WriteLine($"Error reloading question {questionId}: {ex}");
                 return null;
             }
         }
@@ -335,7 +337,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error deleting question {questionId}: {ex}");
+                Debug.WriteLine($"Error deleting question {questionId}: {ex}");
                 _deleteError = $"Error deleting question: {ex.Message}";
             }
             finally

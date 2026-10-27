@@ -3,10 +3,25 @@ using FamilyFeud.Services.Hasura;
 
 namespace FamilyFeud.Services
 {
-    // Simple application state for teams and scores. Registered as a singleton.
+    // All game rules and shared state: teams, scores, the current question, revealed answers, strikes,
+    // turn control and game length. Registered as a singleton so the host and audience windows share it.
     public class GameStateService
     {
+        // Game length, chosen on the start screen with SetGameLength
+        public const GameLengthMode DefaultGameLength = GameLengthMode.Rounds;
+        public const int DefaultTotalRounds = 5;
+        public const int DefaultTargetScore = 300;
+        public static readonly IReadOnlyList<int> RoundOptions = new[] { 5, 10, 15, 20 };
+
         private readonly IHasuraService _hasura;
+
+        // Revealed answers per question, shared by the host and audience windows (questionId -> set of answerIds)
+        private readonly Dictionary<int, HashSet<int>> _revealedAnswers = new();
+
+        // Ids of questions loaded this game; when every cached question has been asked the game ends
+        private readonly HashSet<int> _askedQuestionIds = new();
+
+        public event Action? StateChanged;
 
         // Use Team model instances to store team data
         public Team Team1 { get; private set; }
@@ -14,24 +29,104 @@ namespace FamilyFeud.Services
 
         public SelectedTeam StartingTeam { get; set; }
 
+        // The team whose turn it is now (face-off turn, team in control, or stealing team).
+        // Random until the host picks a starting team; the team that starts each face-off is StartingTeam.
+        public SelectedTeam WhichTeamsTurn { get; private set; } = SelectedTeam.Random;
+
         public List<Question> Questions { get; private set; } = new();
 
-        // Currently active question (shared so audience window can display it)
+        // Currently active question, shared by the host and audience windows
         public Question? CurrentQuestion { get; private set; }
-
-        // Track revealed answers per question for audience display (questionId -> set of answerIds)
-        private readonly Dictionary<int, HashSet<int>> _revealedAnswers = new();
 
         // Expose loading/error state so UI can bind to them
         public bool IsLoading { get; private set; }
         public string ErrorMessage { get; private set; } = string.Empty;
 
-        //Set gamemode
-        public GameMode mode { get; private set; }
+        public GameMode Mode { get; private set; }
 
-        public void SetGameMode(GameMode m)
+        // Playoff-specific state
+        // When two teams each supply a "first answer" we determine which team has the higher answer
+        // and set PlayoffAwaitingChoice = true so the control team can choose to play or pass.
+        public bool PlayoffAwaitingChoice { get; private set; }
+
+        // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
+        public int RoundPool { get; private set; }
+
+        // Whether the current round is finished. Set only by EndRound: the board was cleared in Normal play,
+        // or a steal succeeded or failed. Cleared when the next question loads.
+        public bool IsRoundFinished { get; private set; }
+
+        public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
+
+        // Number of rounds in the game (used when GameLength is Rounds). Always one of RoundOptions.
+        public int TotalRounds { get; private set; } = DefaultTotalRounds;
+
+        // Points a team needs to win (used when GameLength is TargetScore)
+        public int TargetScore { get; private set; } = DefaultTargetScore;
+
+        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question doesn't count.
+        public int RoundsPlayed { get; private set; }
+
+        // Set by EndRound when the chosen length is reached or no questions are left. No new rounds start after this.
+        public bool IsGameOver { get; private set; }
+
+        // Why the game ended (set by EndRound with IsGameOver); None while the game is running
+        public GameEndReason EndReason { get; private set; } = GameEndReason.None;
+
+        // The round the host is on: the next round before a question loads, the finished round after it ends
+        public int CurrentRoundNumber
         {
-            mode = m;
+            get
+            {
+                int round = IsRoundFinished ? RoundsPlayed : RoundsPlayed + 1;
+                return GameLength == GameLengthMode.Rounds ? Math.Min(round, TotalRounds) : round;
+            }
+        }
+
+        // The team with the higher score once the game is over; Random means the game isn't over or it's a tie
+        public SelectedTeam Winner
+        {
+            get
+            {
+                if (!IsGameOver || Team1.Score == Team2.Score) return SelectedTeam.Random;
+                return Team1.Score > Team2.Score ? SelectedTeam.Team1 : SelectedTeam.Team2;
+            }
+        }
+
+        // Winning screen headline: "<name> wins!" or "It's a tie!" (empty while the game is running)
+        public string WinnerHeadline
+        {
+            get
+            {
+                if (!IsGameOver) return string.Empty;
+                return Winner switch
+                {
+                    SelectedTeam.Team1 => $"{Team1.Name} wins!",
+                    SelectedTeam.Team2 => $"{Team2.Name} wins!",
+                    _ => "It's a tie!"
+                };
+            }
+        }
+
+        // Winning screen subtitle saying how the game ended, e.g. "After 5 rounds" or "Red reached 300 points"
+        public string GameOverReasonText
+        {
+            get
+            {
+                string rounds = RoundsPlayed == 1 ? "1 round" : $"{RoundsPlayed} rounds";
+                return EndReason switch
+                {
+                    GameEndReason.RoundsPlayed => $"After {rounds}",
+                    GameEndReason.TargetScore => Winner switch
+                    {
+                        SelectedTeam.Team1 => $"{Team1.Name} reached {TargetScore} points after {rounds}",
+                        SelectedTeam.Team2 => $"{Team2.Name} reached {TargetScore} points after {rounds}",
+                        _ => $"Reached {TargetScore} points after {rounds}"
+                    },
+                    GameEndReason.OutOfQuestions => $"Out of questions after {rounds}",
+                    _ => string.Empty
+                };
+            }
         }
 
         public GameStateService(IHasuraService hasura)
@@ -40,7 +135,7 @@ namespace FamilyFeud.Services
             // Initialise with default names
             Team1 = new Team("Team 1");
             Team2 = new Team("Team 2");
-            SetGameMode(GameMode.PlayOff);
+            Mode = GameMode.PlayOff;
         }
 
         public void SetCurrentQuestion(Question? q)
@@ -102,7 +197,7 @@ namespace FamilyFeud.Services
             if (ans == null) return;
 
             // GameMode.PlayOff mode means they are fighting to choose who goes first
-            if (mode == GameMode.PlayOff)
+            if (Mode == GameMode.PlayOff)
             {
                 // every answer revealed during the face-off goes into the round pool
                 RoundPool += ans.Points;
@@ -162,7 +257,7 @@ namespace FamilyFeud.Services
                     PlayoffAwaitingChoice = true;
                 }
             }
-            else if (mode == GameMode.Normal)
+            else if (Mode == GameMode.Normal)
             {
                 // Normal play: revealed answers go into the round pool; the control team wins it if they clear the board
                 RoundPool += ans.Points;
@@ -170,7 +265,7 @@ namespace FamilyFeud.Services
                 // Check if all answers have been revealed (round is finished)
                 if (CheckAndFinishRound(q)) return;
             }
-            else if (mode == GameMode.PointSteal)
+            else if (Mode == GameMode.PointSteal)
             {
                 // the stealing team found an answer: they win the pool plus this answer
                 if (WhichTeamsTurn != SelectedTeam.Random)
@@ -189,7 +284,7 @@ namespace FamilyFeud.Services
         {
             if (!PlayoffAwaitingChoice) return;
             PlayoffAwaitingChoice = false;
-            mode = GameMode.Normal;
+            Mode = GameMode.Normal;
             Team1.IncorrectStrikes = 0;
             Team2.IncorrectStrikes = 0;
             NotifyStateChanged();
@@ -202,7 +297,7 @@ namespace FamilyFeud.Services
             PlayoffAwaitingChoice = false;
             // hand control to the other team (set directly so we only notify once below)
             WhichTeamsTurn = WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
-            mode = GameMode.Normal;
+            Mode = GameMode.Normal;
             Team1.IncorrectStrikes = 0;
             Team2.IncorrectStrikes = 0;
             NotifyStateChanged();
@@ -214,7 +309,7 @@ namespace FamilyFeud.Services
             // the round is over: ignore strikes until the next question loads
             if (IsRoundFinished) return;
 
-            if (mode == GameMode.PlayOff)
+            if (Mode == GameMode.PlayOff)
             {
                 // ignore strikes while the play/pass choice is pending or before a team is in control
                 if (PlayoffAwaitingChoice || WhichTeamsTurn == SelectedTeam.Random) return;
@@ -241,7 +336,7 @@ namespace FamilyFeud.Services
                 NotifyStateChanged();
                 return;
             }
-            if (mode == GameMode.PointSteal)
+            if (Mode == GameMode.PointSteal)
             {
                 // stealing team failed: the team in control keeps the pool
                 EndRound(WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1);
@@ -254,7 +349,7 @@ namespace FamilyFeud.Services
             int strikes = WhichTeamsTurn == SelectedTeam.Team1 ? Team1.IncorrectStrikes : Team2.IncorrectStrikes;
             if (strikes >= 3)
             {
-                mode = GameMode.PointSteal;
+                Mode = GameMode.PointSteal;
                 // other team becomes the stealing team (set directly so we only notify once below)
                 WhichTeamsTurn = WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
                 NotifyStateChanged();
@@ -289,103 +384,6 @@ namespace FamilyFeud.Services
             return _revealedAnswers.TryGetValue(questionId, out HashSet<int>? set) && set.Contains(answerId);
         }
 
-        // Which team goes first: SelectedTeam.Team1, SelectedTeam.Team2, or SelectedTeam.Random (Random/not-selected)
-        // Default to Random so no concrete selection is assumed until the host picks
-        public SelectedTeam WhichTeamsTurn { get; private set; } = SelectedTeam.Random;
-
-        // Playoff-specific state
-        // When two teams each supply a "first answer" we determine which team has the higher answer
-        // and set PlayoffAwaitingChoice = true so the control team can choose to play or pass.
-        public bool PlayoffAwaitingChoice { get; private set; }
-
-        // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
-        public int RoundPool { get; private set; }
-
-        // Whether the current round is finished (all answers revealed or strikes exhausted)
-        public bool IsRoundFinished { get; set; } = false;
-
-        // Game length, chosen on the start screen with SetGameLength
-        public const GameLengthMode DefaultGameLength = GameLengthMode.Rounds;
-        public const int DefaultTotalRounds = 5;
-        public const int DefaultTargetScore = 300;
-        public static readonly IReadOnlyList<int> RoundOptions = new[] { 5, 10, 15, 20 };
-
-        public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
-
-        // Number of rounds in the game (used when GameLength is Rounds). Always one of RoundOptions.
-        public int TotalRounds { get; private set; } = DefaultTotalRounds;
-
-        // Points a team needs to win (used when GameLength is TargetScore)
-        public int TargetScore { get; private set; } = DefaultTargetScore;
-
-        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question doesn't count.
-        public int RoundsPlayed { get; private set; }
-
-        // Set by EndRound when the chosen length is reached or no questions are left. No new rounds start after this.
-        public bool IsGameOver { get; private set; }
-
-        // Ids of questions loaded this game; when every cached question has been asked the game ends
-        private readonly HashSet<int> _askedQuestionIds = new();
-
-        // The round the host is on: the next round before a question loads, the finished round after it ends
-        public int CurrentRoundNumber
-        {
-            get
-            {
-                int round = IsRoundFinished ? RoundsPlayed : RoundsPlayed + 1;
-                return GameLength == GameLengthMode.Rounds ? Math.Min(round, TotalRounds) : round;
-            }
-        }
-
-        // The team with the higher score once the game is over; Random means the game isn't over or it's a tie
-        public SelectedTeam Winner
-        {
-            get
-            {
-                if (!IsGameOver || Team1.Score == Team2.Score) return SelectedTeam.Random;
-                return Team1.Score > Team2.Score ? SelectedTeam.Team1 : SelectedTeam.Team2;
-            }
-        }
-
-        // Why the game ended (set by EndRound with IsGameOver); None while the game is running
-        public GameEndReason EndReason { get; private set; } = GameEndReason.None;
-
-        // Winning screen headline: "<name> wins!" or "It's a tie!" (empty while the game is running)
-        public string WinnerHeadline
-        {
-            get
-            {
-                if (!IsGameOver) return string.Empty;
-                return Winner switch
-                {
-                    SelectedTeam.Team1 => $"{Team1.Name} wins!",
-                    SelectedTeam.Team2 => $"{Team2.Name} wins!",
-                    _ => "It's a tie!"
-                };
-            }
-        }
-
-        // Winning screen subtitle saying how the game ended, e.g. "After 5 rounds" or "Red reached 300 points"
-        public string GameOverReasonText
-        {
-            get
-            {
-                string rounds = RoundsPlayed == 1 ? "1 round" : $"{RoundsPlayed} rounds";
-                return EndReason switch
-                {
-                    GameEndReason.RoundsPlayed => $"After {rounds}",
-                    GameEndReason.TargetScore => Winner switch
-                    {
-                        SelectedTeam.Team1 => $"{Team1.Name} reached {TargetScore} points after {rounds}",
-                        SelectedTeam.Team2 => $"{Team2.Name} reached {TargetScore} points after {rounds}",
-                        _ => $"Reached {TargetScore} points after {rounds}"
-                    },
-                    GameEndReason.OutOfQuestions => $"Out of questions after {rounds}",
-                    _ => string.Empty
-                };
-            }
-        }
-
         // Called by the start screen. Rounds must be one of RoundOptions and the target score must be positive.
         public void SetGameLength(GameLengthMode lengthMode, int totalRounds, int targetScore)
         {
@@ -396,8 +394,6 @@ namespace FamilyFeud.Services
             TargetScore = targetScore;
             NotifyStateChanged();
         }
-
-        public event Action? StateChanged;
 
         public void SwitchTeam(SelectedTeam t)
         {
@@ -468,7 +464,7 @@ namespace FamilyFeud.Services
             PlayoffAwaitingChoice = false;
             // a round abandoned by loading a new question loses its pool
             RoundPool = 0;
-            mode = GameMode.PlayOff;
+            Mode = GameMode.PlayOff;
         }
 
         // Checks if all answers in the given question have been revealed.

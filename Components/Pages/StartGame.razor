@@ -1,5 +1,4 @@
 @page "/startgame"
-@using Microsoft.AspNetCore.Components.Forms
 @using FamilyFeud.Services
 
 <div class="ff-page-header">
@@ -8,7 +7,6 @@
 
 <div class="ff-container">
     <div class="ff-teams-container">
-
         <!-- Team 1 -->
         <div class="ff-team-box ff-team1">
             <input class="form-control mb-2 text-center" @bind="Team1Name" />
@@ -25,13 +23,12 @@
     <div class="ff-first-picker">
         <p class="ff-muted">Who goes first?</p>
 
-        <InputRadioGroup TValue="FamilyFeud.Services.SelectedTeam" @bind-Value="SelectedFirst">
-
+        <InputRadioGroup TValue="SelectedTeam" @bind-Value="SelectedFirst">
             <div>
                 <label class="ff-first-option">
                     <InputRadio class="ff-radio-hidden"
-                                TValue="FamilyFeud.Services.SelectedTeam"
-                                Value="@FamilyFeud.Services.SelectedTeam.Team1" />
+                                TValue="SelectedTeam"
+                                Value="@SelectedTeam.Team1" />
                     <span class="ff-option-content">
                         <span class="ff-option-icon">🏆</span>
                         @Team1Name
@@ -40,8 +37,8 @@
 
                 <label class="ff-first-option">
                     <InputRadio class="ff-radio-hidden"
-                                TValue="FamilyFeud.Services.SelectedTeam"
-                                Value="@FamilyFeud.Services.SelectedTeam.Random" />
+                                TValue="SelectedTeam"
+                                Value="@SelectedTeam.Random" />
                     <span class="ff-option-content">
                         <span class="ff-option-icon">🎲</span>
                         Random
@@ -50,8 +47,8 @@
 
                 <label class="ff-first-option">
                     <InputRadio class="ff-radio-hidden"
-                                TValue="FamilyFeud.Services.SelectedTeam"
-                                Value="@FamilyFeud.Services.SelectedTeam.Team2" />
+                                TValue="SelectedTeam"
+                                Value="@SelectedTeam.Team2" />
                     <span class="ff-option-content">
                         <span class="ff-option-icon">⚡</span>
                         @Team2Name

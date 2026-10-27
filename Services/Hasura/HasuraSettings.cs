@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json;
 
@@ -16,7 +17,7 @@ namespace FamilyFeud.Services.Hasura
             using Stream? stream = assembly.GetManifestResourceStream("FamilyFeud.appsettings.json");
             if (stream == null)
             {
-                System.Diagnostics.Debug.WriteLine("appsettings.json not found - copy appsettings.example.json to appsettings.json and rebuild.");
+                Debug.WriteLine("appsettings.json not found - copy appsettings.example.json to appsettings.json and rebuild.");
                 return new HasuraSettings();
             }
 

@@ -17,7 +17,7 @@ dotnet run -f net10.0-windows10.0.19041.0
 
 Other TFMs: `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`.
 
-**Setup:** Copy `appsettings.example.json` to `appsettings.json`, then fill in the Hasura endpoint and admin secret. `appsettings.json` is git-ignored and gets embedded in the build; `Services/Hasura/HasuraSettings.cs` reads it. Never commit the secret or put it back into source. The project has no test projects and no lint configuration. In Debug builds, Blazor WebView dev tools are enabled.
+**Setup:** Copy `appsettings.example.json` to `appsettings.json`, then fill in the Hasura endpoint and admin secret. `appsettings.json` is git-ignored and gets embedded in the build; `Services/Hasura/HasuraSettings.cs` reads it. Never commit the secret or put it back into source. The project has no test projects. Code style is set in `.editorconfig` (suggestion-level only, so it never breaks the build); `dotnet format FamilyFeud.csproj --no-restore` works on this project and should leave no changes. In Debug builds, Blazor WebView dev tools are enabled.
 
 ## Issue tracking
 
@@ -27,7 +27,7 @@ Known bugs and requested features are listed in `TODO.md`. When you finish an is
 
 - **Hosting:** `App.xaml.cs` creates a `Window` with `MainPage.xaml`, whose `BlazorWebView` mounts `Components/Routes.razor` (the router, with default layout `Components/Layout/MainLayout.razor`).
 - **Two windows, one state:** `Game.razor.cs` toggles a second MAUI `Window` that contains `Components/Pages/AudiencePage.xaml`. That page has its own `BlazorWebView`, which mounts `Audience.razor` directly as its root component (it doesn't go through the router). Both windows resolve the same singleton `GameStateService`, which is how the audience display stays in sync. Components subscribe to `GameState.StateChanged` and call `InvokeAsync(StateHasChanged)`. They must unsubscribe in `Dispose`.
-- **`Services/GameStateService.cs`** contains all of the game rules: teams, scores, the current question, revealed answers, strikes, and turn control. It works as a state machine over `GameMode`:
+- **`Services/GameStateService.cs`** contains all of the game rules: teams, scores, the current question, revealed answers, strikes, and turn control. It works as a state machine over `GameMode` (the `Mode` property):
   - `PlayOff`: the face-off. Each team gets one `FirstAnswer`. If a team finds the top answer, or once both teams have answered, `PlayoffAwaitingChoice` is set.
   - `Normal`: after the host calls `ChoosePlay()` or `ChoosePass()`, revealed answers add to the round pool for the team in control. Three `HostStrike()` calls move the game to `PointSteal`.
   - `PointSteal`: the other team gets one guess. A correct reveal wins them the pool plus that answer. A strike gives the pool to the team in control.
@@ -46,4 +46,4 @@ Known bugs and requested features are listed in `TODO.md`. When you finish an is
 - Use Bootstrap utility classes. Scoped CSS goes in `X.razor.css` next to the component.
 - **Never use `@import` in scoped `*.razor.css` files.** The SDK rejects them. Shared styles and CSS variables belong in `wwwroot/css/master.css`, which `wwwroot/index.html` links (the project sets `EnableDefaultCssItems=false`).
 - Get the user's agreement before changing `TargetFrameworks` or `UseMaui`, or moving away from the BlazorWebView hosting model.
-- Code style: explicit types are preferred over `var` in services, and nullable reference types are enabled.
+- Code style (encoded in `.editorconfig`): explicit types instead of `var` everywhere, C# and `@foreach` in markup alike (`var` only for anonymous types); block-scoped namespaces; Allman braces; 4-space indent; `using` directives instead of fully qualified type names; PascalCase public members and `_camelCase` private fields. In `GameStateService`, constants, fields, the event and all properties come first, then the constructor, then methods. Nullable reference types are enabled.

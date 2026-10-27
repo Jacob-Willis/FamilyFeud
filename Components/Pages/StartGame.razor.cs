@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Components;
 
 namespace FamilyFeud.Components.Pages
 {
-    public partial class StartGame
-    : IDisposable
+    public partial class StartGame : IDisposable
     {
         [Inject]
         private NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
+        private GameStateService GameState { get; set; } = null!;
 
         private const int MaxTargetScore = 10000;
 
@@ -29,7 +28,6 @@ namespace FamilyFeud.Components.Pages
             string.IsNullOrWhiteSpace(GameState.Team1.Name) ||
             string.IsNullOrWhiteSpace(GameState.Team2.Name) ||
             !IsTargetScoreValid;
-
 
         private void GoBack()
         {
@@ -66,7 +64,7 @@ namespace FamilyFeud.Components.Pages
         }
 
         // Which team goes first: SelectedTeam.Team1, SelectedTeam.Team2, or SelectedTeam.Random
-        private FamilyFeud.Services.SelectedTeam SelectedFirst
+        private SelectedTeam SelectedFirst
         {
             get => GameState.WhichTeamsTurn;
             set { GameState.SwitchTeam(value); }
@@ -74,10 +72,10 @@ namespace FamilyFeud.Components.Pages
 
         private void PlayGame()
         {
-            // Basic validation: ensure teams have names and a first pick is selected
+            // Same checks as VerifyStart: both team names and a valid target score
             if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name) || !IsTargetScoreValid)
             {
-                // For now, do nothing. Could show validation UI.
+                // Start is disabled in this case, so this is only a safety net
                 return;
             }
 
@@ -85,9 +83,9 @@ namespace FamilyFeud.Components.Pages
             int targetScore = LengthMode == GameLengthMode.TargetScore && TargetScore is int target ? target : GameStateService.DefaultTargetScore;
             GameState.SetGameLength(LengthMode, TotalRounds, targetScore);
 
-            if (SelectedFirst == FamilyFeud.Services.SelectedTeam.Random)
+            if (SelectedFirst == SelectedTeam.Random)
             {
-                // If first not selected, default to random
+                // Random (the default): pick the starting team at random
                 GameState.ChooseRandomFirst();
             }
             else
