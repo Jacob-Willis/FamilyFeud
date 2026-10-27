@@ -62,7 +62,7 @@ query GetQuestion($id: Int!) {
             if (question == null) throw new ArgumentNullException(nameof(question));
 
             string mutation = @"
-mutation InsertQuestion($question: String!, $category: String!,$answers: [answers_insert_input!]!) {
+mutation InsertQuestion($question: String!, $category: String!, $answers: [answers_insert_input!]!) {
   insert_questions_one(object: { question: $question, category: $category, answers: { data: $answers } }) {
     id
   }
