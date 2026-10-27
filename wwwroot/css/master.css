@@ -1,9 +1,8 @@
 /* Master shared styles for FamilyFeud */
 :root {
-    --ff-primary: #1b6ec2;
-    --ff-accent: #258cfb;
-    --ff-bg: #ffffff;
-    --ff-text: #222222;
+    /* Dark panels (#52): modal fill, and the light muted text used on them */
+    --ff-modal-bg: rgba(20, 22, 34, 0.94);
+    --ff-text-muted: rgba(255, 255, 255, 0.7);
 }
 
 /* Base rules kept from the Blazor template stylesheet (app.css, removed in #35).
@@ -129,7 +128,7 @@ h1:focus {
 
 /* Shared button system (#45). Every button in the app uses .ff-btn plus at most one variant
    (.ff-btn-primary, .ff-btn-danger) and optionally .ff-btn-sm. The plain .ff-btn is the secondary style.
-   The fill is near-opaque so a button looks the same on the dark pages and in the white modals.
+   The fill is near-opaque so a button looks the same on the dark pages and in the dark modals.
    Put buttons that sit side by side in a .ff-btn-row; modal buttons go in a .ff-modal-actions row. */
 .ff-btn {
     display: inline-flex;
@@ -370,14 +369,7 @@ h1:focus {
     transition: opacity 400ms ease, transform 400ms ease;
 }
 
-.audience-controls {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 10000;
-}
-
-/* Modal backdrop and modal used on game page for blocking Play/Pass choice */
+/* Modal backdrop and modal: the Game page's Play/Pass, confirmation and question picker modals, and the delete modals */
 .ff-modal-backdrop {
     position: fixed;
     inset: 0;
@@ -388,33 +380,93 @@ h1:focus {
     z-index: 20000;
 }
 
+/* Dark translucent panel like the rest of the app (#52), with light text. The fill is more opaque than the
+   .ff-container-border panels so the page showing through the backdrop never fights the modal's text. */
 .ff-modal {
-    background: white;
+    background: var(--ff-modal-bg);
+    color: #ffffff;
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.25);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
     min-width: 320px;
     max-width: 90%;
+}
+
+/* Bootstrap's muted text and danger alert are made for white pages, so re-colour them inside a modal.
+   The delete modals use both (#17). */
+.ff-modal .text-muted {
+    color: var(--ff-text-muted) !important;
+}
+
+.ff-modal .alert-danger {
+    color: #ffb3ba;
+    background: rgba(220, 53, 69, 0.18);
+    border-color: rgba(220, 53, 69, 0.6);
 }
 
 /* Delete confirmation modal (#17), shared by the Questions and NewQuestion pages (#34).
    Kept after .ff-modal so its max-width wins. */
 .ff-delete-modal {
-    color: #222222;
     max-width: 480px;
     word-break: break-word;
+}
+
+/* Dark select and text input (#52), for controls in modals and the Game footer. Same look as the Questions page's
+   search box and category select. color-scheme: dark makes the native dropdown list and scrollbar dark too. */
+.ff-select,
+.ff-input {
+    padding: 0.55rem 1rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    background-color: rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    color: #ffffff;
+    color-scheme: dark;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.15s ease;
+}
+
+.ff-input {
+    min-width: 0;
+}
+
+.ff-input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.ff-select:hover:not(:disabled),
+.ff-input:hover:not(:disabled) {
+    background-color: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.35);
+}
+
+.ff-select:focus,
+.ff-input:focus {
+    outline: none;
+    background-color: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.55);
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.45);
+}
+
+.ff-select:disabled,
+.ff-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ff-select option {
+    background: #1b1d28;
+    color: #ffffff;
 }
 
 /* When modal is shown we slightly dim the rest of the page via backdrop and pointer-events disabled by overlay; answers and footer are visually underneath */
 .ff-modal-backdrop ~ * {
     pointer-events: none;
-}
-
-.layout-root {
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    min-height: 100vh;
 }
 
 /* Winning screen (#8): shown on the host Game page and replaces the audience board once the game is over */

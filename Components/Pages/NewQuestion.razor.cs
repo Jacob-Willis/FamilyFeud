@@ -220,7 +220,7 @@ namespace FamilyFeud.Components.Pages
                     {
                         // Deleted elsewhere after this page loaded (#37). Nothing was saved or recreated,
                         // so drop it from the shared cache like the delete flow does and hide Delete.
-                        GameState.Questions.RemoveAll(q => q.Id == QuestionId.Value);
+                        GameState.RemoveQuestionFromCache(QuestionId.Value);
                         _questionLoaded = false;
                         _message = "This question has been deleted.";
                         _isSuccess = false;
@@ -231,14 +231,11 @@ namespace FamilyFeud.Components.Pages
                     // otherwise the Game page loads everything from Hasura later.
                     if (GameState.Questions.Count > 0)
                     {
-                        Question? existingQuestion = GameState.Questions.FirstOrDefault(q => q.Id == QuestionId.Value);
-                        if (existingQuestion != null)
+                        if (GameState.Questions.Any(q => q.Id == QuestionId.Value))
                         {
                             // Reload so new answers get their real database IDs (form-built answers have Id 0)
                             Question source = await ReloadQuestionAsync(QuestionId.Value) ?? question;
-                            existingQuestion.QuestionText = source.QuestionText;
-                            existingQuestion.Category = source.Category;
-                            existingQuestion.Answers = source.Answers;
+                            GameState.UpdateCachedQuestion(QuestionId.Value, source);
                         }
                     }
 
@@ -261,7 +258,7 @@ namespace FamilyFeud.Components.Pages
                         {
                             // Reload so the answers have their real database IDs (form-built answers have Id 0)
                             Question savedQuestion = await ReloadQuestionAsync(createdId) ?? question;
-                            GameState.Questions.Add(savedQuestion);
+                            GameState.AddQuestionToCache(savedQuestion);
                         }
 
                         _message = $"Question created successfully (ID: {createdId})!";
@@ -342,7 +339,7 @@ namespace FamilyFeud.Components.Pages
                 await HasuraService.DeleteQuestionAsync(questionId);
 
                 // Keep the shared cache in step (mirrors HandleSubmit's create/update handling).
-                GameState.Questions.RemoveAll(q => q.Id == questionId);
+                GameState.RemoveQuestionFromCache(questionId);
 
                 _showDeleteConfirm = false;
                 Navigation.NavigateTo("/questions");
