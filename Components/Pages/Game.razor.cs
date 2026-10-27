@@ -248,7 +248,7 @@ namespace FamilyFeud.Components.Pages
                     _audienceWindow = null;
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        try { Application.Current.CloseWindow(toClose); } catch { }
+                        try { Application.Current?.CloseWindow(toClose); } catch { }
                     });
                     return;
                 }
@@ -259,7 +259,7 @@ namespace FamilyFeud.Components.Pages
                 // No remote server: just open the audience window on the host (projector)
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
-                    Application.Current.OpenWindow(window);
+                    Application.Current?.OpenWindow(window);
                 });
             }
             catch (Exception ex)
@@ -275,7 +275,7 @@ namespace FamilyFeud.Components.Pages
                 GameState.StateChanged -= OnGameStateChanged;
                 if (_audienceWindow != null)
                 {
-                    try { Application.Current.CloseWindow(_audienceWindow); } catch { }
+                    try { Application.Current?.CloseWindow(_audienceWindow); } catch { }
                     _audienceWindow = null;
                 }
                 // no remote server to stop
@@ -286,7 +286,7 @@ namespace FamilyFeud.Components.Pages
         private void GoBack()
         {
             // Close audience window before navigating back
-            try { if (_audienceWindow != null) Application.Current.CloseWindow(_audienceWindow); } catch { }
+            try { if (_audienceWindow != null) Application.Current?.CloseWindow(_audienceWindow); } catch { }
             _audienceWindow = null;
             // start the next game from scratch: scores, strikes, pool, question, turn and team names
             GameState.ResetGame();
