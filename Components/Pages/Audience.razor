@@ -27,6 +27,12 @@
         <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
     </div>
     </div>
+    <p class="ff-muted-small mt-2 mb-0">
+        @(GameState.GameLength == GameLengthMode.Rounds
+            ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
+            : $"First to {GameState.TargetScore} points")
+        @(GameState.IsGameOver ? " · Game over" : "")
+    </p>
 </div>
 
 @if (GameState.CurrentQuestion != null)

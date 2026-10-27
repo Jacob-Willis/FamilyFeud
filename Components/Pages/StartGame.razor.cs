@@ -1,3 +1,4 @@
+using FamilyFeud.Services;
 using Microsoft.AspNetCore.Components;
 
 namespace FamilyFeud.Components.Pages
@@ -11,10 +12,23 @@ namespace FamilyFeud.Components.Pages
         [Inject]
         private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
 
-        // Return true when Start should be disabled: missing team names or no "who goes first" selected
+        private const int MaxTargetScore = 10000;
+
+        // Game length chosen on this screen; copied into GameState when the game starts
+        private GameLengthMode LengthMode { get; set; } = GameStateService.DefaultGameLength;
+        private int TotalRounds { get; set; } = GameStateService.DefaultTotalRounds;
+        private int? TargetScore { get; set; } = GameStateService.DefaultTargetScore;
+
+        // Only checked in target score mode; an empty or out-of-range box blocks Start
+        private bool IsTargetScoreValid =>
+            LengthMode != GameLengthMode.TargetScore ||
+            (TargetScore is int target && target >= 1 && target <= MaxTargetScore);
+
+        // Return true when Start should be disabled: missing team names or an invalid target score
         private bool VerifyStart =>
             string.IsNullOrWhiteSpace(GameState.Team1.Name) ||
-            string.IsNullOrWhiteSpace(GameState.Team2.Name);
+            string.IsNullOrWhiteSpace(GameState.Team2.Name) ||
+            !IsTargetScoreValid;
 
 
         private void GoBack()
@@ -61,11 +75,15 @@ namespace FamilyFeud.Components.Pages
         private void PlayGame()
         {
             // Basic validation: ensure teams have names and a first pick is selected
-            if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name))
+            if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name) || !IsTargetScoreValid)
             {
                 // For now, do nothing. Could show validation UI.
                 return;
             }
+
+            // the target score is only used in target score mode, so keep the default when the box is unused
+            int targetScore = LengthMode == GameLengthMode.TargetScore && TargetScore is int target ? target : GameStateService.DefaultTargetScore;
+            GameState.SetGameLength(LengthMode, TotalRounds, targetScore);
 
             if (SelectedFirst == FamilyFeud.Services.SelectedTeam.Random)
             {

@@ -106,3 +106,15 @@
     border: 1px solid rgba(255,255,255,0.45);
     transform: translateY(-2px);
 }
+
+/* Game length rows: option label followed by its rounds dropdown or target score box */
+.ff-first-picker .ff-length-picker {
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.ff-length-picker .form-select,
+.ff-length-picker .form-control {
+    min-width: 7rem;
+}
