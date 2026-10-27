@@ -28,7 +28,6 @@ namespace FamilyFeud
                 client.BaseAddress = new Uri(settings.Endpoint);
                 client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
                 client.DefaultRequestHeaders.Add("x-hasura-role", "app_full_access");
-                client.DefaultRequestHeaders.Add("x-hasura-api-key", "1234567890");
                 if (!string.IsNullOrEmpty(settings.AdminSecret))
                 {
                     client.DefaultRequestHeaders.Add("x-hasura-admin-secret", settings.AdminSecret);
