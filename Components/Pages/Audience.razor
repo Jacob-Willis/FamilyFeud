@@ -1,4 +1,5 @@
 @using FamilyFeud.Services
+@implements IDisposable
 @inject FamilyFeud.Services.GameStateService GameState
 
 @code {
@@ -16,46 +17,67 @@
     }
 }
 
-<div class="ff-container ff-container-border">
-    <div class="Teams d-flex gap-5">
-    <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
-        <p class="ff-muted-large teamname">@GameState.Team1.Name</p>
-        <p class="ff-muted-large teamscore">@GameState.Team1.Score</p>
-    </div>
-    <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
-        <p class="ff-muted-large teamname">@GameState.Team2.Name</p>
-        <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
-    </div>
-    </div>
-    <p class="ff-muted-small mt-2 mb-0">
-        @(GameState.GameLength == GameLengthMode.Rounds
-            ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
-            : $"First to {GameState.TargetScore} points")
-        @(GameState.IsGameOver ? " · Game over" : "")
-    </p>
-</div>
-
-@if (GameState.CurrentQuestion != null)
+@* Winning screen (#8): replaces the board once the game is over *@
+@if (GameState.IsGameOver)
 {
-    <div class="ff-container ff-container-border">
-        <div class="ff-round-pool">
-            <span class="ff-round-pool-label">Pool</span>
-            <span class="ff-round-pool-value">@GameState.RoundPool</span>
+    <div class="ff-container ff-container-border ff-winner ff-winner-audience">
+        <p class="ff-winner-label mb-0">Game over</p>
+        <h1 class="ff-winner-headline mb-0">@GameState.WinnerHeadline</h1>
+        <div class="d-flex justify-content-center gap-5 flex-wrap">
+            <div class="ff-winner-team @(GameState.Winner == SelectedTeam.Team1 ? "winner" : "")">
+                <span class="ff-winner-team-name">@GameState.Team1.Name</span>
+                <span class="ff-winner-team-score">@GameState.Team1.Score</span>
+            </div>
+            <div class="ff-winner-team @(GameState.Winner == SelectedTeam.Team2 ? "winner" : "")">
+                <span class="ff-winner-team-name">@GameState.Team2.Name</span>
+                <span class="ff-winner-team-score">@GameState.Team2.Score</span>
+            </div>
         </div>
-        <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
-        <div class="ff-answer-box">
-            @foreach (var a in GameState.CurrentQuestion.Answers)
-            {
-                var revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
-                <div @key="@(GameState.CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item audience-item @(revealed ? "revealed" : "hidden")">
-                    <div class="answer-text">@a.AnswerText</div>
-                    <div class="answer-points">@a.Points</div>
-                </div>
-            }
-        </div>
+        <p class="ff-muted mb-0">@GameState.GameOverReasonText</p>
     </div>
 }
 else
 {
-    <p>No question loaded</p>
+    <div class="ff-container ff-container-border">
+        <div class="Teams d-flex gap-5">
+        <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
+            <p class="ff-muted-large teamname">@GameState.Team1.Name</p>
+            <p class="ff-muted-large teamscore">@GameState.Team1.Score</p>
+        </div>
+        <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
+            <p class="ff-muted-large teamname">@GameState.Team2.Name</p>
+            <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
+        </div>
+        </div>
+        <p class="ff-muted-small mt-2 mb-0">
+            @(GameState.GameLength == GameLengthMode.Rounds
+                ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
+                : $"First to {GameState.TargetScore} points")
+        </p>
+    </div>
+
+    if (GameState.CurrentQuestion != null)
+    {
+        <div class="ff-container ff-container-border">
+            <div class="ff-round-pool">
+                <span class="ff-round-pool-label">Pool</span>
+                <span class="ff-round-pool-value">@GameState.RoundPool</span>
+            </div>
+            <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
+            <div class="ff-answer-box">
+                @foreach (var a in GameState.CurrentQuestion.Answers)
+                {
+                    var revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
+                    <div @key="@(GameState.CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item audience-item @(revealed ? "revealed" : "hidden")">
+                        <div class="answer-text">@a.AnswerText</div>
+                        <div class="answer-points">@a.Points</div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <p>No question loaded</p>
+    }
 }

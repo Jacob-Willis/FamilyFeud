@@ -20,6 +20,27 @@
     </div>
 }
 
+@* Winning screen (#8): shown above the board once the game is over; the last round's answers stay visible below *@
+@if (GameState.IsGameOver)
+{
+    <div class="ff-container ff-container-border ff-winner">
+        <p class="ff-winner-label mb-0">Game over</p>
+        <h2 class="ff-winner-headline mb-0">@GameState.WinnerHeadline</h2>
+        <div class="d-flex justify-content-center gap-4 flex-wrap">
+            <div class="ff-winner-team @(GameState.Winner == SelectedTeam.Team1 ? "winner" : "")">
+                <span class="ff-winner-team-name">@GameState.Team1.Name</span>
+                <span class="ff-winner-team-score">@GameState.Team1.Score</span>
+            </div>
+            <div class="ff-winner-team @(GameState.Winner == SelectedTeam.Team2 ? "winner" : "")">
+                <span class="ff-winner-team-name">@GameState.Team2.Name</span>
+                <span class="ff-winner-team-score">@GameState.Team2.Score</span>
+            </div>
+        </div>
+        <p class="ff-muted-small mb-0">@GameState.GameOverReasonText</p>
+        <button class="ff-start-game-button align-self-center" @onclick="GoBack">New game</button>
+    </div>
+}
+
 <div class="ff-container ff-container-border">
     <div class="Teams">
         <h3 class="ff-muted">Teams</h3>
@@ -36,14 +57,6 @@
         <p class="ff-muted mt-3 mb-0">Round pool: @GameState.RoundPool</p>
         <p class="ff-muted-small mb-0">@GameProgressText</p>
     </div>
-    @if (GameState.IsGameOver)
-    {
-        @* Placeholder until the winning screen (#8) replaces it *@
-        <div class="alert alert-info mt-3 mb-0 text-center">
-            <strong>Game over</strong>
-            <div>@GameOverText</div>
-        </div>
-    }
     @if (CurrentQuestion != null)
     {
         <div class="ff-question">

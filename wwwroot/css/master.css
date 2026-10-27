@@ -324,3 +324,84 @@
         background-color: #5A7BFF;
         box-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000;
     }
+/* Winning screen (#8): shown on the host Game page and replaces the audience board once the game is over */
+.ff-winner {
+    text-align: center;
+    padding: 1.5rem 2rem;
+    border: 2px solid rgba(255,215,0,0.7);
+    box-shadow: 0 0 24px rgba(255,215,0,0.35);
+}
+
+.ff-winner-label {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.85);
+}
+
+.ff-winner-headline {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #ffd700;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    overflow-wrap: anywhere;
+}
+
+.ff-winner-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 9rem;
+    padding: 0.5rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.35);
+    background: rgba(0,0,0,0.45);
+    color: rgba(255,255,255,0.7);
+}
+
+.ff-winner-team.winner {
+    border-color: #ffd700;
+    color: #ffffff;
+}
+
+.ff-winner-team-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.ff-winner-team-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+/* Audience window: big enough to read on a projector */
+.ff-winner-audience {
+    max-width: 900px;
+    margin-top: 3rem;
+    padding: 2.5rem 3rem;
+}
+
+.ff-winner-audience .ff-winner-label {
+    font-size: 1.5rem;
+}
+
+.ff-winner-audience .ff-winner-headline {
+    font-size: clamp(3rem, 7vw, 6rem);
+}
+
+.ff-winner-audience .ff-winner-team {
+    min-width: 14rem;
+    padding: 1rem 2rem;
+}
+
+.ff-winner-audience .ff-winner-team-name {
+    font-size: clamp(1.5rem, 2.5vw, 2.25rem);
+}
+
+.ff-winner-audience .ff-winner-team-score {
+    font-size: clamp(3rem, 6vw, 5rem);
+}
