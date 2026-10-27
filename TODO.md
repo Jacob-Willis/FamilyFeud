@@ -9,6 +9,7 @@ Priority: **P1** = wrong game behaviour or a security problem · **P2** = broken
 | ID | Priority | Area | Issue | Location | Expected / notes |
 |----|----------|------|-------|----------|------------------|
 | 1 | P1 | Security | The Hasura admin secret is hardcoded in source, which gives full database access to anyone with the code or the compiled app. The `x-hasura-api-key` value `1234567890` is also a placeholder. | `MauiProgram.cs:33-36` | **Partly done (2026-10-27):** the secret now lives in `appsettings.json`, which is git-ignored (template: `appsettings.example.json`), and `HasuraSettings.Load()` reads it. The placeholder `x-hasura-api-key` header has been removed (Hasura ignores it). Git history is clean, but every build made so far embeds the old secret (`FamilyFeud.csproj:81`). **Still to do:** (1) the owner rotates `HASURA_GRAPHQL_ADMIN_SECRET` in the Hasura console and updates their local `appsettings.json`. (2) Stop using the admin secret: create a limited role (e.g. JWT `feud_app` with select/insert/update/delete on `questions` and `answers` only), send `Authorization: Bearer <token>` instead of the `x-hasura-*` headers, and check that the `answers` FK cascades on delete. Any credential shipped in the app can still be extracted. |
+| 62 | P3 | Platform | Untested on a real Mac: with scenes on Mac Catalyst, closing a window with the red button may not disconnect its scene straight away (Apple can delay or skip it), so `Window.Destroying` may fire late. The host window closing might then not close the Audience window and quit, and closing the Audience window might leave the toggle button saying it's open. | `App.xaml.cs` `OnMainWindowDestroying`, `Game.razor.cs` `OnAudienceWindowDestroying` | Check on a Mac after #61. If it's a problem, also listen for scene deactivation, or end the app on last-window close via `AppDelegate`. Found during #61. |
 
 ## Completed issues
 
@@ -73,6 +74,7 @@ Priority: **P1** = wrong game behaviour or a security problem · **P2** = broken
 | 58 | `HasBeenAsked` sat among the properties in `GameStateService` | 2026-10-28 | Moved below the constructor per the member-ordering rule. Found during the cleanup. |
 | 59 | Stale modal comments, dead CSS and unused variables in `master.css` | 2026-10-28 | Updated comments that called the modals white or Play/Pass-only; removed the unused `.audience-controls` and `.layout-root` rules and the unused `--ff-primary`/`--ff-accent`/`--ff-bg`/`--ff-text` variables. Found during #52. |
 | 60 | The Game footer category select had no accessible name | 2026-10-28 | Added `aria-label="Question category"`. Found during #52. |
+| 61 | The Audience window couldn't open on Mac Catalyst (no multi-scene support declared) | 2026-10-28 | Added `UIApplicationSceneManifest` (multiple scenes, default MAUI scene configuration) to `Platforms/MacCatalyst/Info.plist` and a `SceneDelegate` (`MauiUISceneDelegate`) in `Platforms/MacCatalyst/SceneDelegate.cs`. Builds for `net10.0-maccatalyst` on Windows; not tested on a real Mac. |
 
 ## Test notes (2026-10-28)
 
