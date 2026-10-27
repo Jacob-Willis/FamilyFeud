@@ -77,7 +77,12 @@
         <div class="ff-answer-box">
             @foreach (var a in CurrentQuestion.Answers)
             {
-                <button @key="@(CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item" disabled="@(IsChoiceModalOpen || GameState.IsRoundFinished)" @onclick="() => { if (!IsChoiceModalOpen && !GameState.IsRoundFinished) RevealAnswer(a); }">
+                bool isRevealed = GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id);
+                <button @key="@(CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item @(isRevealed ? "revealed" : "")" disabled="@(IsChoiceModalOpen || GameState.IsRoundFinished || isRevealed)" title="@(isRevealed ? "Already revealed" : null)" @onclick="() => { if (!IsChoiceModalOpen && !GameState.IsRoundFinished && !isRevealed) RevealAnswer(a); }">
+                    @if (isRevealed)
+                    {
+                        <span class="revealed-badge">Revealed</span>
+                    }
                     <div class="answer-text">@a.AnswerText</div>
                     <div class="answer-points">@a.Points</div>
                 </button>

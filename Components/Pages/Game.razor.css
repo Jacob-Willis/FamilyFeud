@@ -1,0 +1,29 @@
+/* Revealed answers (#12): dimmed, struck through, badged and not clickable */
+.ff-answer-box .ff-answer-item.revealed,
+.ff-answer-box .ff-answer-item.revealed:hover {
+    position: relative;
+    opacity: 0.5;
+    background: rgba(20,20,60,0.55);
+    border-style: dashed;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.ff-answer-item.revealed .answer-text,
+.ff-answer-item.revealed .answer-points {
+    text-decoration: line-through;
+}
+
+.ff-answer-item .revealed-badge {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    padding: 0 0.4rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    color: #fff;
+    background: rgba(40,160,80,0.85);
+}
