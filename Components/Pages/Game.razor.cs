@@ -45,16 +45,14 @@ namespace FamilyFeud.Components.Pages
             IsAllCategories(category)
             || string.Equals((q.Category ?? string.Empty).Trim(), category, StringComparison.OrdinalIgnoreCase);
 
-        // The category the host picked in the dropdown
-        private string _selectedCategory = AllCategories;
-
-        // Selected category for filtering; AllCategories means no filtering. If the picked category no longer has
-        // any questions in the cache it reads as AllCategories, so the dropdown and the filter never point at a
+        // Selected category for filtering; AllCategories means no filtering. The host's pick is stored in the shared
+        // game state, so it survives this page being re-created (#50). If the picked category no longer has any
+        // questions in the cache it reads as AllCategories, so the dropdown and the filter never point at a
         // missing category (#41). The match ignores case, like IsInCategory (#31).
         private string SelectedCategory
         {
-            get => ResolveCategory(_selectedCategory);
-            set => _selectedCategory = value ?? AllCategories;
+            get => ResolveCategory(GameState.SelectedCategory);
+            set => GameState.SelectedCategory = value ?? AllCategories;
         }
 
         // A stored category value as it currently stands: the matching entry in Categories (ignoring case), or
@@ -210,7 +208,7 @@ namespace FamilyFeud.Components.Pages
                 if (pool.Count == 0)
                 {
                     // No questions left in the selected category; fall back to any remaining question (#14)
-                    InfoMessage = $"No questions left in {CategoryLabel(SelectedCategory)}— picked from all categories";
+                    InfoMessage = $"No questions left in {CategoryLabel(SelectedCategory)} — picked from all categories";
                     pool = RemainingQuestions;
                 }
 

@@ -36,11 +36,13 @@ namespace FamilyFeud.Services
 
         public List<Question> Questions { get; private set; } = new();
 
+        // The category the host picked on the Game page, kept here so it survives that page being re-created (e.g. a
+        // visit to the Questions page mid-game) (#50). Empty means "All categories". Only the host page uses it, so
+        // setting it doesn't notify. The page resolves it against the cached categories. Cleared by ResetGame.
+        public string SelectedCategory { get; set; } = string.Empty;
+
         // Ids of the questions asked this game, read-only (#32). Cleared by ResetGame.
         public IReadOnlyCollection<int> AskedQuestionIds => _askedQuestionIds;
-
-        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
-        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
 
         // Cached questions not asked yet this game. Computed on demand from Questions, so questions deleted
         // mid-game drop out straight away and the pool survives the Game page being re-created (#32).
@@ -104,11 +106,11 @@ namespace FamilyFeud.Services
             get
             {
                 if (TotalRounds is int total && TargetScore is int target)
-                    return $"Round {CurrentRoundNumber} of {total} · First to {target} points";
+                    return $"Round {CurrentRoundNumber} of {total} · First to {PointsText(target)}";
                 if (TotalRounds is int rounds)
                     return $"Round {CurrentRoundNumber} of {rounds}";
                 if (TargetScore is int score)
-                    return $"First to {score} points (round {CurrentRoundNumber})";
+                    return $"First to {PointsText(score)} (round {CurrentRoundNumber})";
                 return $"Round {CurrentRoundNumber}";
             }
         }
@@ -144,14 +146,15 @@ namespace FamilyFeud.Services
             get
             {
                 string rounds = RoundsPlayed == 1 ? "1 round" : $"{RoundsPlayed} rounds";
+                string target = PointsText(TargetScore ?? 0);
                 return EndReason switch
                 {
                     GameEndReason.RoundsPlayed => $"After {rounds}",
                     GameEndReason.TargetScore => Winner switch
                     {
-                        SelectedTeam.Team1 => $"{Team1.Name} reached {TargetScore} points after {rounds}",
-                        SelectedTeam.Team2 => $"{Team2.Name} reached {TargetScore} points after {rounds}",
-                        _ => $"Reached {TargetScore} points after {rounds}"
+                        SelectedTeam.Team1 => $"{Team1.Name} reached {target} after {rounds}",
+                        SelectedTeam.Team2 => $"{Team2.Name} reached {target} after {rounds}",
+                        _ => $"Reached {target} after {rounds}"
                     },
                     GameEndReason.OutOfQuestions => $"Out of questions after {rounds}",
                     _ => string.Empty
@@ -167,6 +170,9 @@ namespace FamilyFeud.Services
             Team2 = new Team("Team 2");
             Mode = GameMode.PlayOff;
         }
+
+        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
+        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
 
         public void SetCurrentQuestion(Question? q)
         {
@@ -205,6 +211,10 @@ namespace FamilyFeud.Services
 
         public void RevealAnswer(int questionId, int answerId)
         {
+            // the face-off is decided and the host still has to choose Play or Pass: no more reveals until then (#49).
+            // Checked before the answer is marked revealed, so it stays hidden and can be revealed after the choice.
+            if (Mode == GameMode.PlayOff && PlayoffAwaitingChoice && !IsRoundFinished) return;
+
             if (!_revealedAnswers.TryGetValue(questionId, out HashSet<int>? set))
             {
                 set = new HashSet<int>();
@@ -460,6 +470,12 @@ namespace FamilyFeud.Services
             }
         }
 
+        // "1 point" or "N points", so a target of 1 doesn't read "1 points" (#53)
+        private static string PointsText(int points)
+        {
+            return points == 1 ? "1 point" : $"{points} points";
+        }
+
         // Team1 or Team2 with equal chance; changes no state
         private static SelectedTeam PickRandomTeam()
         {
@@ -504,6 +520,7 @@ namespace FamilyFeud.Services
             IsGameOver = false;
             EndReason = GameEndReason.None;
             _askedQuestionIds.Clear();
+            SelectedCategory = string.Empty;
             NotifyStateChanged();
         }
 
@@ -601,6 +618,42 @@ namespace FamilyFeud.Services
             finally
             {
                 IsLoading = false;
+                NotifyStateChanged();
+            }
+        }
+
+        // The question pages edit the cached list through these three methods instead of touching Questions directly,
+        // so open listeners (the Game page and the audience window) hear about it (#51). Each notifies once.
+        // Like LoadQuestionsAsync they leave the game rules alone: asked ids, the round and revealed answers stay as they are.
+
+        // Adds a question that was just saved to Hasura. The caller only does this once questions have been loaded
+        // (an empty cache must stay empty so the Game page still loads everything from Hasura).
+        public void AddQuestionToCache(Question question)
+        {
+            Questions.Add(question);
+            NotifyStateChanged();
+        }
+
+        // Copies the saved text, category and answers onto the cached question with this id. The cached instance can
+        // be the CurrentQuestion the audience window is showing, so it is updated in place rather than replaced.
+        // Does nothing (and doesn't notify) if the question isn't cached.
+        public void UpdateCachedQuestion(int questionId, Question source)
+        {
+            Question? cached = Questions.Find(q => q.Id == questionId);
+            if (cached == null) return;
+
+            cached.QuestionText = source.QuestionText;
+            cached.Category = source.Category;
+            cached.Answers = source.Answers;
+            NotifyStateChanged();
+        }
+
+        // Removes a deleted question from the cache; RemainingQuestions and the categories follow automatically.
+        // Does nothing (and doesn't notify) if the question isn't cached.
+        public void RemoveQuestionFromCache(int questionId)
+        {
+            if (Questions.RemoveAll(q => q.Id == questionId) > 0)
+            {
                 NotifyStateChanged();
             }
         }
