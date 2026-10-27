@@ -46,12 +46,12 @@
     <div class="ff-modal-backdrop">
         <div class="ff-modal ff-picker">
             <h4>Choose question</h4>
-            <p class="mb-2">Remaining questions in @(SelectedCategory == "All" ? "all categories" : SelectedCategory): @QuestionsInSelectedCategory().Count</p>
+            <p class="mb-2">Remaining questions in @(IsAllCategories(SelectedCategory) ? "all categories" : SelectedCategory): @QuestionsInSelectedCategory().Count</p>
             <input class="form-control mb-2" type="search" placeholder="Search questions" aria-label="Search questions" @bind="PickerSearch" @bind:event="oninput" />
             @if (picks.Count == 0)
             {
                 <p class="ff-picker-empty mb-2">@(QuestionsInSelectedCategory().Count == 0
-                    ? $"No questions left in {SelectedCategory} — choose another category or use Load Question."
+                    ? $"No questions left in {CategoryLabel(SelectedCategory)} — choose another category or use Load Question."
                     : "No questions match your search.")</p>
             }
             else
@@ -61,7 +61,7 @@
                     {
                         <button @key="q.Id" type="button" class="list-group-item list-group-item-action" @onclick="() => PickQuestion(q)">
                             <span>@q.QuestionText</span>
-                            @if (SelectedCategory == "All" && !string.IsNullOrWhiteSpace(q.Category))
+                            @if (IsAllCategories(SelectedCategory) &&!string.IsNullOrWhiteSpace(q.Category))
                             {
                                 <span class="badge text-bg-secondary ms-2">@q.Category</span>
                             }
@@ -183,6 +183,7 @@
         </div>
         <div class="me-auto">
             <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
+                <option value="@AllCategories">@CategoryLabel(AllCategories)</option>
                 @foreach (string c in Categories)
                 {
                     <option value="@c">@c</option>
