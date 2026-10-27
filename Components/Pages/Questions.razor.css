@@ -67,11 +67,30 @@
 .ff-answer-container-heading {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
     margin-left: 10px;
     margin-right: 10px;
-    small {
-        font-style: italic;
-    }
+}
+
+/* Question and category form a left-aligned column that takes the spare width, so the headings line up card to card */
+.ff-question-heading-text {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+
+.ff-question-heading-text h5 {
+    text-align: left;
+    margin: 0 0 0.125rem 0;
+}
+
+.ff-question-heading-text small {
+    display: block;
+    text-align: left;
+    font-style: italic;
+    margin-bottom: 0;
 }
 
 .ff-answer-container-answers {
@@ -90,14 +109,13 @@
 
 /* Buttons use the shared .ff-btn classes and the delete modal uses .ff-delete-modal, all in wwwroot/css/master.css (#34, #45) */
 
-/* Narrow windows: the question text takes its own line above the category and buttons, so the card fits */
+/* Narrow windows: the question and category take the full row and the buttons wrap underneath, so the card fits */
 @media (max-width: 600px) {
     .ff-answer-container-heading {
         flex-wrap: wrap;
-        column-gap: 0.75rem;
     }
 
-    .ff-answer-container-heading h5 {
+    .ff-question-heading-text {
         flex-basis: 100%;
     }
 }

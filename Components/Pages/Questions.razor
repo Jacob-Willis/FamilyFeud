@@ -57,8 +57,10 @@
                 {
                     <div class="ff-answer-container">
                         <div class="ff-answer-container-heading">
-                            <h5 class="ff-muted">@q.QuestionText</h5>
-                            <small class="ff-muted-small">@q.Category</small>
+                            <div class="ff-question-heading-text">
+                                <h5 class="ff-muted">@q.QuestionText</h5>
+                                <small class="ff-muted-small">@q.Category</small>
+                            </div>
                             <div class="ff-btn-row flex-nowrap align-items-start">
                                 <button class="ff-btn ff-btn-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
                                 <button class="ff-btn ff-btn-danger ff-btn-sm" @onclick="() => AskDelete(q)">Delete</button>

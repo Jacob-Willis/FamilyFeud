@@ -20,16 +20,16 @@
 
 .title #wordone {
     align-self: flex-start;
-    font-size: 70px;
+    font-size: clamp(36px, 10vw, 70px);
 }
 
 #adjective {
     align-self: center;
-    font-size: 90px;
+    font-size: clamp(36px, 10vw, 90px);
     font-weight: 700;
 }
 
 .title #wordtwo {
     align-self: flex-end;
-    font-size: 110px;
+    font-size: clamp(52px, 16vw, 110px);
 }
