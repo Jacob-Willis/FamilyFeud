@@ -88,6 +88,13 @@ namespace FamilyFeud.Services
             // don't reveal same answer twice
             if (!set.Add(answerId)) return;
 
+            // once the round has ended, reveals are display-only: nothing is scored until the next question loads
+            if (IsRoundFinished)
+            {
+                NotifyStateChanged();
+                return;
+            }
+
             // Find question and answer
             Question? q = (CurrentQuestion?.Id == questionId) ? CurrentQuestion : Questions.Find(x => x.Id == questionId);
             if (q == null) return;
@@ -97,63 +104,54 @@ namespace FamilyFeud.Services
             // GameMode.PlayOff mode means they are fighting to choose who goes first
             if (mode == GameMode.PlayOff)
             {
+                // every answer revealed during the face-off goes into the round pool
+                RoundPool += ans.Points;
+
+                int topPoints = q.Answers.Count > 0 ? q.Answers.Max(a => a.Points) : 0;
+
                 // If team 1 does not have a first answer, select it here
                 if (WhichTeamsTurn == SelectedTeam.Team1 && Team1.FirstAnswer == null)
                 {
                     Team1.FirstAnswer = ans;
 
-                    // Award points immediately to that team
-                    Team1.Score += ans.Points;
-                    RoundPointsTeam1 += ans.Points;
-
-                    // Compare the answer with the answer with max points
-                    int topPoints = q.Answers.Count > 0 ? q.Answers.Max(a => a.Points) : 0;
                     if (ans.Points == topPoints)
                     {
                         // if they got the top answer, team 1 remains in control and can choose to play or pass
                         PlayoffAwaitingChoice = true;
                     }
-                    else
+                    else if (Team2.FirstAnswer == null)
                     {
                         // switch to the other team to ask for their first answer
-                        if (Team2.FirstAnswer == null) SwitchTeam();
+                        WhichTeamsTurn = SelectedTeam.Team2;
                     }
-
-                    NotifyStateChanged();
                 }
                 // otherwise same for team 2
                 else if (WhichTeamsTurn == SelectedTeam.Team2 && Team2.FirstAnswer == null)
                 {
                     Team2.FirstAnswer = ans;
 
-                    Team2.Score += ans.Points;
-                    RoundPointsTeam2 += ans.Points;
-
-                    // Compare the answer with the answer with max points
-                    int topPoints = q.Answers.Count > 0 ? q.Answers.Max(a => a.Points) : 0;
                     if (ans.Points == topPoints)
                     {
                         // if they got the top answer, team 2 remains in control and can choose to play or pass
                         PlayoffAwaitingChoice = true;
                     }
-                    else
+                    else if (Team1.FirstAnswer == null)
                     {
                         // switch to the other team to ask for their first answer
-                        if (Team1.FirstAnswer == null) SwitchTeam();
+                        WhichTeamsTurn = SelectedTeam.Team1;
                     }
-
-                    NotifyStateChanged();
                 }
+
                 if (Team1.FirstAnswer != null && Team2.FirstAnswer != null)
                 {
                     // Both teams have supplied a first answer, determine which is higher and set control team
                     if (Team1.FirstAnswer.Points > Team2.FirstAnswer.Points)
                     {
-                        SwitchTeam(SelectedTeam.Team1);
+                        WhichTeamsTurn = SelectedTeam.Team1;
                     }
                     else if (Team2.FirstAnswer.Points > Team1.FirstAnswer.Points)
                     {
-                        SwitchTeam(SelectedTeam.Team2);
+                        WhichTeamsTurn = SelectedTeam.Team2;
                     }
                     else
                     {
@@ -162,74 +160,28 @@ namespace FamilyFeud.Services
                         WhichTeamsTurn = ChooseRandomFirst();
                     }
                     PlayoffAwaitingChoice = true;
-                    NotifyStateChanged();
-                    return;
-
                 }
             }
-
             else if (mode == GameMode.Normal)
             {
-                // Normal play: award revealed answer points immediately to the active team (or SelectedFirst fallback)
-                if (WhichTeamsTurn == SelectedTeam.Team1)
-                {
-                    Team1.Score += ans.Points;
-                    RoundPointsTeam1 += ans.Points;
-                }
-                else if (WhichTeamsTurn == SelectedTeam.Team2)
-                {
-                    Team2.Score += ans.Points;
-                    RoundPointsTeam2 += ans.Points;
-                }
+                // Normal play: revealed answers go into the round pool; the control team wins it if they clear the board
+                RoundPool += ans.Points;
 
                 // Check if all answers have been revealed (round is finished)
-                CheckAndFinishRound(q);
+                if (CheckAndFinishRound(q)) return;
             }
             else if (mode == GameMode.PointSteal)
             {
-
-                // If we're in a steal attempt and the stealing team reveals an answer, they succeed and steal previously awarded round points
+                // the stealing team found an answer: they win the pool plus this answer
                 if (WhichTeamsTurn != SelectedTeam.Random)
                 {
-                    // stealing team is PlayoffActiveTeam; owner is the other team
-                    SelectedTeam stealer = WhichTeamsTurn;
-                    SelectedTeam owner = stealer == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
-
-                    int stolenAmount = owner == SelectedTeam.Team1 ? RoundPointsTeam1 : RoundPointsTeam2;
-
-                    // remove stolen points from owner and give to stealer
-                    if (owner == SelectedTeam.Team1)
-                    {
-                        Team1.Score = Math.Max(0, Team1.Score - stolenAmount);
-                    }
-                    else
-                    {
-                        Team2.Score = Math.Max(0, Team2.Score - stolenAmount);
-                    }
-
-                    // award stolen points and the points for this correct stealing answer to the stealer
-                    if (stealer == SelectedTeam.Team1)
-                    {
-                        Team1.Score += stolenAmount + ans.Points;
-                    }
-                    else
-                    {
-                        Team2.Score += stolenAmount + ans.Points;
-                    }
-
-                    // round is over so reset round points
-                    RoundPointsTeam1 = 0;
-                    RoundPointsTeam2 = 0;
-
-                    // end round: the next question sets up the next starting team
-                    ResetPlayoffState();
-                    IsRoundFinished = true;
+                    RoundPool += ans.Points;
+                    EndRound(WhichTeamsTurn);
                     return;
                 }
             }
 
             NotifyStateChanged();
-            return;
         }
 
         // Host indicates the control team chose to keep the turn
@@ -248,7 +200,8 @@ namespace FamilyFeud.Services
         {
             if (!PlayoffAwaitingChoice) return;
             PlayoffAwaitingChoice = false;
-            SwitchTeam();
+            // hand control to the other team (set directly so we only notify once below)
+            WhichTeamsTurn = WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
             mode = GameMode.Normal;
             Team1.IncorrectStrikes = 0;
             Team2.IncorrectStrikes = 0;
@@ -258,6 +211,9 @@ namespace FamilyFeud.Services
         // Host registers a strike for the current active team
         public void HostStrike()
         {
+            // the round is over: ignore strikes until the next question loads
+            if (IsRoundFinished) return;
+
             if (mode == GameMode.PlayOff)
             {
                 // ignore strikes while the play/pass choice is pending or before a team is in control
@@ -287,9 +243,8 @@ namespace FamilyFeud.Services
             }
             if (mode == GameMode.PointSteal)
             {
-                // stealing team failed: do not change scores (points were already awarded to owner on reveal)
-                ResetPlayoffState();
-                IsRoundFinished = true;
+                // stealing team failed: the team in control keeps the pool
+                EndRound(WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1);
                 return;
             }
 
@@ -300,8 +255,8 @@ namespace FamilyFeud.Services
             if (strikes >= 3)
             {
                 mode = GameMode.PointSteal;
-                // other team becomes the stealing team
-                SwitchTeam();
+                // other team becomes the stealing team (set directly so we only notify once below)
+                WhichTeamsTurn = WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
                 NotifyStateChanged();
                 return;
             }
@@ -356,9 +311,8 @@ namespace FamilyFeud.Services
         // and set PlayoffAwaitingChoice = true so the control team can choose to play or pass.
         public bool PlayoffAwaitingChoice { get; private set; }
 
-        // Track round-awarded points per team so they can be transferred if stolen
-        public int RoundPointsTeam1 { get; private set; }
-        public int RoundPointsTeam2 { get; private set; }
+        // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
+        public int RoundPool { get; private set; }
 
         // Whether the current round is finished (all answers revealed or strikes exhausted)
         public bool IsRoundFinished { get; set; } = false;
@@ -415,33 +369,34 @@ namespace FamilyFeud.Services
             Team1.IncorrectStrikes = 0;
             Team2.IncorrectStrikes = 0;
             PlayoffAwaitingChoice = false;
-            RoundPointsTeam1 = 0;
-            RoundPointsTeam2 = 0;
+            // a round abandoned by loading a new question loses its pool
+            RoundPool = 0;
             mode = GameMode.PlayOff;
         }
 
         // Checks if all answers in the given question have been revealed.
-        // If so, marks the round as finished (IsRoundFinished = true).
-        private void CheckAndFinishRound(Question q)
+        // If so, the control team wins the pool and the round ends. Returns true when the round was ended (and notified).
+        private bool CheckAndFinishRound(Question q)
         {
             if (q == null || !_revealedAnswers.TryGetValue(q.Id, out HashSet<int>? revealedSet))
-                return;
+                return false;
 
-            // Calculate total possible points from all answers
-            int totalPossiblePoints = q.Answers.Sum(a => a.Points);
+            // Round is finished when every answer has been revealed
+            bool allRevealed = q.Answers.All(a => revealedSet.Contains(a.Id));
+            if (!allRevealed) return false;
 
-            // Calculate total revealed points
-            int totalRevealedPoints = revealedSet.Sum(answerId =>
-            {
-                Answer? a = q.Answers.Find(x => x.Id == answerId);
-                return a?.Points ?? 0;
-            });
+            EndRound(WhichTeamsTurn);
+            return true;
+        }
 
-            // Round is finished when all points have been revealed
-            if (totalRevealedPoints >= totalPossiblePoints)
-            {
-                IsRoundFinished = true;
-            }
+        // Ends the round: the winner gets the whole pool. The next SetCurrentQuestion resets the face-off state.
+        private void EndRound(SelectedTeam winner)
+        {
+            if (winner == SelectedTeam.Team1) Team1.Score += RoundPool;
+            else if (winner == SelectedTeam.Team2) Team2.Score += RoundPool;
+            RoundPool = 0;
+            IsRoundFinished = true;
+            NotifyStateChanged();
         }
 
         public async Task LoadQuestionsAsync()
