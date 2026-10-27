@@ -52,8 +52,8 @@ namespace FamilyFeud.Services
         // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
         public int RoundPool { get; private set; }
 
-        // Whether the current round is finished. Set only by EndRound: the board was cleared in Normal play,
-        // or a steal succeeded or failed. Cleared when the next question loads.
+        // Whether the current round is finished. Set by EndRound (the board was cleared in Normal play, or a steal
+        // succeeded or failed) or by AbandonRound (Reveal All mid-round). Cleared when the next question loads.
         public bool IsRoundFinished { get; private set; }
 
         public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
@@ -64,7 +64,7 @@ namespace FamilyFeud.Services
         // Points a team needs to win (used when GameLength is TargetScore)
         public int TargetScore { get; private set; } = DefaultTargetScore;
 
-        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question doesn't count.
+        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question or by Reveal All doesn't count.
         public int RoundsPlayed { get; private set; }
 
         // Set by EndRound when the chosen length is reached or no questions are left. No new rounds start after this.
@@ -359,10 +359,12 @@ namespace FamilyFeud.Services
             NotifyStateChanged();
         }
 
-        // Reveal all answers for the given question without awarding any points
+        // Reveal all answers for the given question without awarding any points. Used after a round to show the
+        // answers nobody found, or to abandon a round in progress (the host confirms that first). Revealing every
+        // answer of the current question mid-round ends it as display-only: see AbandonRound.
         public void RevealAllAnswers(int questionId)
         {
-            Question? q = Questions.Find(x => x.Id == questionId);
+            Question? q = (CurrentQuestion?.Id == questionId) ? CurrentQuestion : Questions.Find(x => x.Id == questionId);
             if (q == null) return;
 
             if (!_revealedAnswers.TryGetValue(questionId, out HashSet<int>? set))
@@ -374,6 +376,12 @@ namespace FamilyFeud.Services
             foreach (Answer a in q.Answers)
             {
                 set.Add(a.Id);
+            }
+
+            // mid-round: the board is fully shown, so the round can't be played on (#30)
+            if (CurrentQuestion?.Id == questionId && !IsRoundFinished)
+            {
+                AbandonRound();
             }
 
             NotifyStateChanged();
@@ -496,6 +504,22 @@ namespace FamilyFeud.Services
                 EndReason = GameEndReason.OutOfQuestions;
             IsGameOver = EndReason != GameEndReason.None;
             NotifyStateChanged();
+        }
+
+        // Ends the round without a winner (Reveal All mid-round). The pool is discarded and no score changes, like a
+        // round abandoned by loading a new question, so it doesn't count toward RoundsPlayed. Reveals are display-only
+        // and strikes are ignored until the next question. If this was the last question the game ends, because no
+        // further round can start. The caller notifies.
+        private void AbandonRound()
+        {
+            RoundPool = 0;
+            PlayoffAwaitingChoice = false;
+            IsRoundFinished = true;
+            if (NoQuestionsLeft())
+            {
+                EndReason = GameEndReason.OutOfQuestions;
+                IsGameOver = true;
+            }
         }
 
         private bool IsGameLengthReached()
