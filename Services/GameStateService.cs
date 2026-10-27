@@ -61,6 +61,7 @@ namespace FamilyFeud.Services
             }
             // reset playoff state for the new question
             ResetPlayoffState();
+            IsRoundFinished = false;  // New round, so it's not finished
 
             if (q != null)
             {
@@ -70,10 +71,9 @@ namespace FamilyFeud.Services
                     StartingTeam = StartingTeam == SelectedTeam.Team2 ? SelectedTeam.Team1 : SelectedTeam.Team2;
                 }
 
-                // every face-off starts with the starting team (set directly so we only notify once below)
-                WhichTeamsTurn = StartingTeam;
+                // every face-off starts with the starting team
+                SwitchTeam(StartingTeam);
             }
-            IsRoundFinished = false;  // New round, so it's not finished
             NotifyStateChanged();
         }
 
