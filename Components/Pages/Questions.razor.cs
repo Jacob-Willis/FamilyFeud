@@ -117,8 +117,9 @@ namespace FamilyFeud.Components.Pages
                 // so it is removed from the list below.
                 await HasuraService.DeleteQuestionAsync(questionId);
 
-                // This page's list is the shared GameState.Questions cache, so this updates both.
-                GameState.Questions.RemoveAll(q => q.Id == questionId);
+                // This page's list is the shared GameState.Questions cache; removing through the service also tells
+                // the other open listeners (the audience window).
+                GameState.RemoveQuestionFromCache(questionId);
                 _pendingDelete = null;
             }
             catch (Exception ex)

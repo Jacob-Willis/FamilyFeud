@@ -622,6 +622,42 @@ namespace FamilyFeud.Services
             }
         }
 
+        // The question pages edit the cached list through these three methods instead of touching Questions directly,
+        // so open listeners (the Game page and the audience window) hear about it (#51). Each notifies once.
+        // Like LoadQuestionsAsync they leave the game rules alone: asked ids, the round and revealed answers stay as they are.
+
+        // Adds a question that was just saved to Hasura. The caller only does this once questions have been loaded
+        // (an empty cache must stay empty so the Game page still loads everything from Hasura).
+        public void AddQuestionToCache(Question question)
+        {
+            Questions.Add(question);
+            NotifyStateChanged();
+        }
+
+        // Copies the saved text, category and answers onto the cached question with this id. The cached instance can
+        // be the CurrentQuestion the audience window is showing, so it is updated in place rather than replaced.
+        // Does nothing (and doesn't notify) if the question isn't cached.
+        public void UpdateCachedQuestion(int questionId, Question source)
+        {
+            Question? cached = Questions.Find(q => q.Id == questionId);
+            if (cached == null) return;
+
+            cached.QuestionText = source.QuestionText;
+            cached.Category = source.Category;
+            cached.Answers = source.Answers;
+            NotifyStateChanged();
+        }
+
+        // Removes a deleted question from the cache; RemainingQuestions and the categories follow automatically.
+        // Does nothing (and doesn't notify) if the question isn't cached.
+        public void RemoveQuestionFromCache(int questionId)
+        {
+            if (Questions.RemoveAll(q => q.Id == questionId) > 0)
+            {
+                NotifyStateChanged();
+            }
+        }
+
         private void NotifyStateChanged() => StateChanged?.Invoke();
     }
 
