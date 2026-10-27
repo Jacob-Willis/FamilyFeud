@@ -74,10 +74,10 @@ namespace FamilyFeud.Components.Pages
 
         private void PlayGame()
         {
-            // Basic validation: ensure teams have names and a first pick is selected
+            // Same checks as VerifyStart: both team names and a valid target score
             if (string.IsNullOrWhiteSpace(Team1Name) || string.IsNullOrWhiteSpace(Team2Name) || !IsTargetScoreValid)
             {
-                // For now, do nothing. Could show validation UI.
+                // Start is disabled in this case, so this is only a safety net
                 return;
             }
 
@@ -87,7 +87,7 @@ namespace FamilyFeud.Components.Pages
 
             if (SelectedFirst == FamilyFeud.Services.SelectedTeam.Random)
             {
-                // If first not selected, default to random
+                // Random (the default): pick the starting team at random
                 GameState.ChooseRandomFirst();
             }
             else

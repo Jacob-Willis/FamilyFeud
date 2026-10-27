@@ -15,7 +15,7 @@ namespace FamilyFeud
                 });
 
             builder.Services.AddMauiBlazorWebView();
-            // Register application state service for teams and scores (inject Hasura service)
+            // Shared game state (singleton, so the host and audience windows see the same game)
             builder.Services.AddSingleton<FamilyFeud.Services.GameStateService>(sp =>
                 new FamilyFeud.Services.GameStateService(sp.GetRequiredService<FamilyFeud.Services.Hasura.IHasuraService>()));
 

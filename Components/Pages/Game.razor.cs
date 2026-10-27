@@ -12,7 +12,7 @@ namespace FamilyFeud.Components.Pages
         [Inject]
         private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
 
-        // Local copy of remaining questions so we can remove asked questions
+        // Questions not yet asked this game; asked ones are removed so they aren't repeated
         private List<Question> RemainingQuestions { get; set; } = new List<Question>();
 
         // Current question shown in UI; read from the shared state so the host and audience views always match (#14)
@@ -27,10 +27,10 @@ namespace FamilyFeud.Components.Pages
         // Selected category for filtering; "All" means no filtering
         private string SelectedCategory { get; set; } = "All";
 
-        // Window instance for the audience/play window so we can close it when this page is closed
+        // The audience window, kept so it can be closed again (toggle, Back, or leaving this page)
         private Window? _audienceWindow;
 
-        // Whether a play/pass choice modal should be shown and block other UI
+        // Whether the Play/Pass modal is showing, which blocks the rest of the page
         private bool IsChoiceModalOpen => GameState.PlayoffAwaitingChoice && GameState.WhichTeamsTurn != SelectedTeam.Random;
 
         // Footer actions that ask for confirmation while a round is in progress (#13)
@@ -47,7 +47,7 @@ namespace FamilyFeud.Components.Pages
             && !GameState.IsGameOver;
 
         // A round is in progress once a question is loaded, the round isn't finished, some answers are still
-        // hidden, and at least one answer has been revealed or a strike given (or play has moved past the face-off)
+        // hidden, and at least one answer has been revealed, a strike or face-off answer given, or play has moved past the face-off
         private bool IsRoundInProgress
         {
             get
@@ -235,10 +235,9 @@ namespace FamilyFeud.Components.Pages
 
         private void OpenGameWindow()
         {
-            // Open a second MAUI Window that hosts the same MainPage (which contains the BlazorWebView).
-            // The BlazorWebView in the new window will resolve the application's singleton services
-            // (registered in MauiProgram), so both windows share the same GameStateService instance and
-            // will reflect the same question, answers and team scores.
+            // Toggle a second MAUI Window that hosts AudiencePage, whose BlazorWebView mounts Audience.razor.
+            // Its BlazorWebView resolves the same singleton GameStateService (registered in MauiProgram), so
+            // the audience display shows the same question, answers and scores as this host page.
             try
             {
                 // If already open, close it (toggle behavior)
@@ -256,7 +255,6 @@ namespace FamilyFeud.Components.Pages
                 // Create a window that hosts the audience-only page
                 Window window = new Window(new AudiencePage()) { Title = "Audience" };
                 _audienceWindow = window;
-                // No remote server: just open the audience window on the host (projector)
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     Application.Current?.OpenWindow(window);
@@ -278,7 +276,6 @@ namespace FamilyFeud.Components.Pages
                     try { Application.Current?.CloseWindow(_audienceWindow); } catch { }
                     _audienceWindow = null;
                 }
-                // no remote server to stop
             }
             catch { }
         }

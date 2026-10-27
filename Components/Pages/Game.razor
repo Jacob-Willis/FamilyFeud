@@ -5,7 +5,7 @@
     <button class="ff-back-button" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
 </div>
 
-@* Blocking modal for Play/Pass choice. When open, it sits on top of the game page and other UI should be visually disabled. *@
+@* Blocking Play/Pass modal after the face-off. Its backdrop covers the page and Back is disabled while it is open. *@
 @if (GameState.PlayoffAwaitingChoice && GameState.WhichTeamsTurn != SelectedTeam.Random)
 {
     <div class="ff-modal-backdrop">
