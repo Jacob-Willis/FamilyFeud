@@ -1,9 +1,5 @@
 /* Master shared styles for FamilyFeud */
 :root {
-    --ff-primary: #1b6ec2;
-    --ff-accent: #258cfb;
-    --ff-bg: #ffffff;
-    --ff-text: #222222;
     /* Dark panels (#52): modal fill, and the light muted text used on them */
     --ff-modal-bg: rgba(20, 22, 34, 0.94);
     --ff-text-muted: rgba(255, 255, 255, 0.7);
