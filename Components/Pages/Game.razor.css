@@ -14,6 +14,24 @@
     text-decoration: line-through;
 }
 
+/* Host-only question picker (#38): a wider .ff-modal with a scrolling list */
+.ff-picker {
+    width: 640px;
+}
+
+.ff-picker-list {
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.ff-picker-list .list-group-item {
+    text-align: left;
+}
+
+.ff-picker-empty {
+    color: #555;
+}
+
 .ff-answer-item .revealed-badge {
     position: absolute;
     top: 4px;

@@ -200,7 +200,8 @@ namespace FamilyFeud.Components.Pages
                 Question question = new Question
                 {
                     QuestionText = _questionText.Trim(),
-                    Category = string.IsNullOrWhiteSpace(_category) ? null : _category.Trim(),
+                    // Blank means "no category"; the column is NOT NULL, so send "" rather than null (#29).
+                    Category = _category.Trim(),
                     Answers = _answers.Select(a => new Answer
                     {
                         Id = a.Id,
@@ -213,7 +214,18 @@ namespace FamilyFeud.Components.Pages
                 {
                     // Update existing question
                     question.Id = QuestionId.Value;
-                    await HasuraService.UpdateQuestionAsync(question);
+                    bool updated = await HasuraService.UpdateQuestionAsync(question);
+
+                    if (!updated)
+                    {
+                        // Deleted elsewhere after this page loaded (#37). Nothing was saved or recreated,
+                        // so drop it from the shared cache like the delete flow does and hide Delete.
+                        GameState.Questions.RemoveAll(q => q.Id == QuestionId.Value);
+                        _questionLoaded = false;
+                        _message = "This question has been deleted.";
+                        _isSuccess = false;
+                        return;
+                    }
 
                     // Update local state only if the game has already loaded questions;
                     // otherwise the Game page loads everything from Hasura later.

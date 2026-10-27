@@ -13,8 +13,9 @@ namespace FamilyFeud.Components.Pages
         [Inject]
         private GameStateService GameState { get; set; } = null!;
 
-        // Questions not yet asked this game; asked ones are removed so they aren't repeated
-        private List<Question> RemainingQuestions { get; set; } = new List<Question>();
+        // Questions not yet asked this game, worked out by the shared game state each time so it survives this
+        // page being re-created and drops questions deleted mid-game straight away (#32)
+        private List<Question> RemainingQuestions => GameState.RemainingQuestions;
 
         // Current question shown in UI; read from the shared state so the host and audience views always match (#14)
         private Question? CurrentQuestion => GameState.CurrentQuestion;
@@ -40,32 +41,33 @@ namespace FamilyFeud.Components.Pages
         // The action waiting for the host to confirm; None means the confirmation modal is closed
         private ConfirmAction PendingConfirm { get; set; } = ConfirmAction.None;
 
+        // The question the host picked in the "Choose question..." modal, kept while the confirmation modal asks
+        // whether to abandon the round in progress; null means Load Question picks at random (#38)
+        private Question? _chosenQuestion;
+
+        // Whether the host-only "Choose question..." modal is open (#38). The audience window never shows it.
+        private bool IsPickerOpen { get; set; }
+
+        // Text typed into the picker's search box; filters the listed questions by their text
+        private string PickerSearch { get; set; } = string.Empty;
+
         // Strike only makes sense during a live round with no modal open
         private bool CanStrike => CurrentQuestion != null
             && !IsChoiceModalOpen
             && PendingConfirm == ConfirmAction.None
+            && !IsPickerOpen
             && !GameState.IsRoundFinished
             && !GameState.IsGameOver;
 
         // A round is in progress once a question is loaded, the round isn't finished, some answers are still
-        // hidden, and at least one answer has been revealed, a strike or face-off answer given, or play has moved past the face-off
+        // hidden, and the round has had a scored reveal or a strike (including a double face-off strike, #38)
         private bool IsRoundInProgress
         {
             get
             {
-                if (CurrentQuestion == null || GameState.IsRoundFinished) return false;
+                if (CurrentQuestion == null || GameState.IsRoundFinished || !GameState.RoundHasActivity) return false;
 
-                bool anyRevealed = CurrentQuestion.Answers.Any(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
-                bool allRevealed = CurrentQuestion.Answers.All(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
-                if (allRevealed) return false;
-
-                bool anyStrike = GameState.Team1.IncorrectStrikes > 0
-                    || GameState.Team2.IncorrectStrikes > 0
-                    || GameState.Team1.FirstAnswer != null
-                    || GameState.Team2.FirstAnswer != null
-                    || GameState.Mode != GameMode.PlayOff;
-
-                return anyRevealed || anyStrike;
+                return !CurrentQuestion.Answers.All(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
             }
         }
 
@@ -80,8 +82,6 @@ namespace FamilyFeud.Components.Pages
                 await GameState.LoadQuestionsAsync();
             }
 
-            // Copy questions locally so we can remove asked ones without mutating the shared list
-            RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
             BuildCategories();
             GameState.StateChanged += OnGameStateChanged;
         }
@@ -104,12 +104,27 @@ namespace FamilyFeud.Components.Pages
                 SelectedCategory = "All";
         }
 
+        // Remaining questions in the selected category ("All" means every remaining question). LoadQuestion and the
+        // footer count both use this so they always agree (#31). Categories are trimmed and compared ignoring case,
+        // the same way BuildCategories groups them for the dropdown.
+        private List<Question> QuestionsInSelectedCategory()
+        {
+            if (string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "All")
+                return RemainingQuestions;
+
+            return RemainingQuestions
+                .Where(q => string.Equals((q.Category ?? string.Empty).Trim(), SelectedCategory, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         // "Round X of N" or "First to N points", shown under the round pool
         private string GameProgressText => GameState.GameLength == GameLengthMode.Rounds
             ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
             : $"First to {GameState.TargetScore} points (round {GameState.CurrentRoundNumber})";
 
-        private async Task LoadQuestion()
+        // Load the next question. With no chosen question one is picked at random from the selected category;
+        // the "Choose question..." modal passes the host's pick instead (#38). Both go through the same checks.
+        private async Task LoadQuestion(Question? chosen = null)
         {
             // no new rounds once the game is over
             if (GameState.IsGameOver) return;
@@ -117,11 +132,13 @@ namespace FamilyFeud.Components.Pages
 
             // Only load from Hasura if nothing was ever loaded (e.g. the first load failed). Never refill the
             // remaining pool from the cache mid-game, because that would repeat questions already asked (#28).
-            if ((GameState.Questions == null || GameState.Questions.Count == 0) && RemainingQuestions.Count == 0)
+            if (GameState.Questions == null || GameState.Questions.Count == 0)
             {
                 await ReloadQuestionsAsync();
                 // the load failed: the error alert with its Retry button says so, no need for "No questions left" (#15)
                 if (HasLoadError) return;
+                // nothing in Hasura at all: the "No questions found" message already says so (#33)
+                if (NoQuestionsFound) return;
             }
 
             if (RemainingQuestions.Count == 0)
@@ -132,27 +149,38 @@ namespace FamilyFeud.Components.Pages
                 return;
             }
 
-            // Filter by selected category if applicable
-            bool filtered = !string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "All";
-            List<Question> pool = filtered
-                ? RemainingQuestions.Where(q => string.Equals(q.Category ?? string.Empty, SelectedCategory, StringComparison.OrdinalIgnoreCase)).ToList()
-                : RemainingQuestions;
-
-            if (pool.Count == 0)
+            Question next;
+            if (chosen != null)
             {
-                // No questions left in the selected category; fall back to any remaining question (#14)
-                InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
-                pool = RemainingQuestions;
+                // the host's pick must still be unasked (and not deleted meanwhile), so it is never repeated (#38)
+                Question? stillRemaining = RemainingQuestions.FirstOrDefault(q => q.Id == chosen.Id);
+                if (stillRemaining == null)
+                {
+                    InfoMessage = "That question is no longer available";
+                    StateHasChanged();
+                    return;
+                }
+                next = stillRemaining;
+            }
+            else
+            {
+                // Filter by selected category if applicable
+                List<Question> pool = QuestionsInSelectedCategory();
+
+                if (pool.Count == 0)
+                {
+                    // No questions left in the selected category; fall back to any remaining question (#14)
+                    InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
+                    pool = RemainingQuestions;
+                }
+
+                Random rand = new Random();
+                next = pool[rand.Next(0, pool.Count)];
             }
 
-            Random rand = new Random();
-            Question next = pool[rand.Next(0, pool.Count)];
-
-            // Update shared game state so the audience window displays the same question
+            // Update shared game state so the audience window displays the same question. This also marks it
+            // as asked, which takes it out of RemainingQuestions so it won't be repeated.
             GameState.SetCurrentQuestion(next);
-
-            // Remove the asked question from remaining so it won't be repeated
-            RemainingQuestions.RemoveAll(q => q.Id == next.Id);
 
             StateHasChanged();
         }
@@ -160,11 +188,16 @@ namespace FamilyFeud.Components.Pages
         // Loading questions from Hasura failed; the message comes from the shared game state (#15)
         private bool HasLoadError => !GameState.IsLoading && !string.IsNullOrEmpty(GameState.ErrorMessage);
 
-        // Fetch the questions from Hasura and rebuild the remaining pool and categories from them
+        // The load worked but Hasura has no questions at all, so the board would be empty with no hint why (#33)
+        private bool NoQuestionsFound => !GameState.IsLoading && !HasLoadError && GameState.Questions.Count == 0;
+
+        private void GoToQuestions() => Navigation.NavigateTo("/questions");
+
+        // Fetch the questions from Hasura and rebuild the categories from them. RemainingQuestions follows
+        // automatically and still leaves out questions already asked this game.
         private async Task ReloadQuestionsAsync()
         {
             await GameState.LoadQuestionsAsync();
-            RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
             BuildCategories();
         }
 
@@ -179,9 +212,11 @@ namespace FamilyFeud.Components.Pages
             StateHasChanged();
         }
 
-        // Load Question button: ask first if this would abandon a round in progress
-        private async Task RequestLoadQuestion()
+        // Load Question button (random), or a question picked in the "Choose question..." modal (#38): ask first
+        // if this would abandon a round in progress
+        private async Task RequestLoadQuestion(Question? chosen = null)
         {
+            _chosenQuestion = null;
             if (IsChoiceModalOpen || GameState.IsGameOver || GameState.IsLoading) return;
             // nothing to load: say so straight away instead of asking to abandon the round first (#28)
             if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
@@ -191,10 +226,45 @@ namespace FamilyFeud.Components.Pages
             }
             if (IsRoundInProgress)
             {
+                _chosenQuestion = chosen;
                 PendingConfirm = ConfirmAction.LoadQuestion;
                 return;
             }
-            await LoadQuestion();
+            await LoadQuestion(chosen);
+        }
+
+        // Questions listed in the picker: the remaining (never already asked) questions in the selected category,
+        // narrowed by the search box (#38)
+        private List<Question> PickerQuestions()
+        {
+            List<Question> list = QuestionsInSelectedCategory();
+            string search = PickerSearch.Trim();
+            if (search.Length == 0) return list;
+            return list
+                .Where(q => q.QuestionText.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        // "Choose question..." button: same guards as Load Question, then show the host-only picker (#38)
+        private void OpenQuestionPicker()
+        {
+            if (IsChoiceModalOpen || PendingConfirm != ConfirmAction.None || GameState.IsGameOver || GameState.IsLoading) return;
+            if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
+            {
+                InfoMessage = "No questions left";
+                return;
+            }
+            PickerSearch = string.Empty;
+            IsPickerOpen = true;
+        }
+
+        private void CloseQuestionPicker() => IsPickerOpen = false;
+
+        // A question was clicked in the picker: load it exactly like Load Question would, confirmation included
+        private async Task PickQuestion(Question q)
+        {
+            IsPickerOpen = false;
+            await RequestLoadQuestion(q);
         }
 
         // Reveal All Answers button: ask first if this would spoil a round in progress
@@ -212,11 +282,13 @@ namespace FamilyFeud.Components.Pages
         private async Task ConfirmPendingAction()
         {
             ConfirmAction action = PendingConfirm;
+            Question? chosen = _chosenQuestion;
             PendingConfirm = ConfirmAction.None;
+            _chosenQuestion = null;
 
             if (action == ConfirmAction.LoadQuestion)
             {
-                await LoadQuestion();
+                await LoadQuestion(chosen);
             }
             else if (action == ConfirmAction.RevealAll && CurrentQuestion != null)
             {
@@ -224,7 +296,11 @@ namespace FamilyFeud.Components.Pages
             }
         }
 
-        private void CancelPendingAction() => PendingConfirm = ConfirmAction.None;
+        private void CancelPendingAction()
+        {
+            PendingConfirm = ConfirmAction.None;
+            _chosenQuestion = null;
+        }
 
         private void RevealAnswer(Answer a)
         {

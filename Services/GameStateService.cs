@@ -35,6 +35,16 @@ namespace FamilyFeud.Services
 
         public List<Question> Questions { get; private set; } = new();
 
+        // Ids of the questions asked this game, read-only (#32). Cleared by ResetGame.
+        public IReadOnlyCollection<int> AskedQuestionIds => _askedQuestionIds;
+
+        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
+        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
+
+        // Cached questions not asked yet this game. Computed on demand from Questions, so questions deleted
+        // mid-game drop out straight away and the pool survives the Game page being re-created (#32).
+        public List<Question> RemainingQuestions => Questions.Where(q => !HasBeenAsked(q.Id)).ToList();
+
         // Currently active question, shared by the host and audience windows
         public Question? CurrentQuestion { get; private set; }
 
@@ -52,9 +62,14 @@ namespace FamilyFeud.Services
         // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
         public int RoundPool { get; private set; }
 
-        // Whether the current round is finished. Set only by EndRound: the board was cleared in Normal play,
-        // or a steal succeeded or failed. Cleared when the next question loads.
+        // Whether the current round is finished. Set by EndRound (the board was cleared in Normal play, or a steal
+        // succeeded or failed) or by AbandonRound (Reveal All mid-round). Cleared when the next question loads.
         public bool IsRoundFinished { get; private set; }
+
+        // Whether anything that counts has happened this round: a scored reveal or a strike (face-off strikes
+        // included). Unlike the face-off fields it survives the reset after a double face-off strike, so the host
+        // is asked before abandoning the round (#38). Cleared when the next question loads and by ResetGame.
+        public bool RoundHasActivity { get; private set; }
 
         public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
 
@@ -64,7 +79,7 @@ namespace FamilyFeud.Services
         // Points a team needs to win (used when GameLength is TargetScore)
         public int TargetScore { get; private set; } = DefaultTargetScore;
 
-        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question doesn't count.
+        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question or by Reveal All doesn't count.
         public int RoundsPlayed { get; private set; }
 
         // Set by EndRound when the chosen length is reached or no questions are left. No new rounds start after this.
@@ -93,7 +108,7 @@ namespace FamilyFeud.Services
             }
         }
 
-        // Winning screen headline: "<name> wins!" or "It's a tie!" (empty while the game is running)
+        // Winning screen headline: "Winner: <name>" or "It's a tie!"; worded so it reads right for singular and plural team names (empty while the game is running)
         public string WinnerHeadline
         {
             get
@@ -101,8 +116,8 @@ namespace FamilyFeud.Services
                 if (!IsGameOver) return string.Empty;
                 return Winner switch
                 {
-                    SelectedTeam.Team1 => $"{Team1.Name} wins!",
-                    SelectedTeam.Team2 => $"{Team2.Name} wins!",
+                    SelectedTeam.Team1 => $"Winner: {Team1.Name}",
+                    SelectedTeam.Team2 => $"Winner: {Team2.Name}",
                     _ => "It's a tie!"
                 };
             }
@@ -157,6 +172,7 @@ namespace FamilyFeud.Services
             // reset playoff state for the new question
             ResetPlayoffState();
             IsRoundFinished = false;  // New round, so it's not finished
+            RoundHasActivity = false;
 
             if (q != null)
             {
@@ -195,6 +211,8 @@ namespace FamilyFeud.Services
             if (q == null) return;
             Answer? ans = q.Answers.Find(a => a.Id == answerId);
             if (ans == null) return;
+
+            RoundHasActivity = true;
 
             // GameMode.PlayOff mode means they are fighting to choose who goes first
             if (Mode == GameMode.PlayOff)
@@ -314,6 +332,7 @@ namespace FamilyFeud.Services
                 // ignore strikes while the play/pass choice is pending or before a team is in control
                 if (PlayoffAwaitingChoice || WhichTeamsTurn == SelectedTeam.Random) return;
 
+                RoundHasActivity = true;
                 bool team1Striking = WhichTeamsTurn == SelectedTeam.Team1;
                 Team striker = team1Striking ? Team1 : Team2;
                 Team other = team1Striking ? Team2 : Team1;
@@ -336,6 +355,8 @@ namespace FamilyFeud.Services
                 NotifyStateChanged();
                 return;
             }
+            RoundHasActivity = true;
+
             if (Mode == GameMode.PointSteal)
             {
                 // stealing team failed: the team in control keeps the pool
@@ -359,10 +380,13 @@ namespace FamilyFeud.Services
             NotifyStateChanged();
         }
 
-        // Reveal all answers for the given question without awarding any points
+        // Reveal all answers for the given question without awarding any points. Used after a round to show the
+        // answers nobody found, or to abandon a round in progress (the host confirms that first). Revealing every
+        // answer of the current question mid-round ends it as display-only: see AbandonRound.
         public void RevealAllAnswers(int questionId)
         {
-            Question? q = Questions.Find(x => x.Id == questionId);
+            // prefer the current question so Reveal All still works if it was deleted from the cache mid-game (#32)
+            Question? q = (CurrentQuestion?.Id == questionId) ? CurrentQuestion : Questions.Find(x => x.Id == questionId);
             if (q == null) return;
 
             if (!_revealedAnswers.TryGetValue(questionId, out HashSet<int>? set))
@@ -374,6 +398,12 @@ namespace FamilyFeud.Services
             foreach (Answer a in q.Answers)
             {
                 set.Add(a.Id);
+            }
+
+            // mid-round: the board is fully shown, so the round can't be played on (#30)
+            if (CurrentQuestion?.Id == questionId && !IsRoundFinished)
+            {
+                AbandonRound();
             }
 
             NotifyStateChanged();
@@ -430,13 +460,14 @@ namespace FamilyFeud.Services
         }
 
         // Clears all game state so the next game starts fresh (used when the host goes back to the start screen).
-        // The loaded Questions cache is kept; the Game page rebuilds its remaining-questions pool from it.
+        // The loaded Questions cache is kept; clearing the asked ids makes every question remaining again.
         public void ResetGame()
         {
             ClearScores();
             // face-off answers, strikes, Play/Pass choice, round pool and mode back to PlayOff
             ResetPlayoffState();
             IsRoundFinished = false;
+            RoundHasActivity = false;
             // no current question means the next SetCurrentQuestion is the first one, so it won't flip StartingTeam
             CurrentQuestion = null;
             _revealedAnswers.Clear();
@@ -498,16 +529,34 @@ namespace FamilyFeud.Services
             NotifyStateChanged();
         }
 
+        // Ends the round without a winner (Reveal All mid-round). The pool is discarded and no score changes, like a
+        // round abandoned by loading a new question, so it doesn't count toward RoundsPlayed. Reveals are display-only
+        // and strikes are ignored until the next question. If this was the last question the game ends, because no
+        // further round can start. The caller notifies.
+        private void AbandonRound()
+        {
+            RoundPool = 0;
+            PlayoffAwaitingChoice = false;
+            IsRoundFinished = true;
+            if (NoQuestionsLeft())
+            {
+                EndReason = GameEndReason.OutOfQuestions;
+                IsGameOver = true;
+            }
+        }
+
         private bool IsGameLengthReached()
         {
             if (GameLength == GameLengthMode.Rounds) return RoundsPlayed >= TotalRounds;
             return Team1.Score >= TargetScore || Team2.Score >= TargetScore;
         }
 
-        // True when every loaded question has been asked this game, so no further round can start
+        // True when no cached question is left to ask, so no further round can start. Uses the same notion of
+        // "remaining" as the Game page, so questions deleted mid-game don't keep the game going and deleting
+        // every question still ends the game (#32).
         private bool NoQuestionsLeft()
         {
-            return Questions.Count > 0 && Questions.All(q => _askedQuestionIds.Contains(q.Id));
+            return _askedQuestionIds.Count > 0 && !Questions.Any(q => !HasBeenAsked(q.Id));
         }
 
         public async Task LoadQuestionsAsync()
