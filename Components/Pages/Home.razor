@@ -1,0 +1,15 @@
+﻿@page "/"
+
+<div class="ff-container ff-home-hero">
+    <div class="title">
+        <h1 id="wordone">The</h1>
+        <h1 id="adjective" style="color: @CurrentAdjectiveColourHex">@CurrentAdjective</h1>
+        <h1 id="wordtwo">Quiz</h1>
+    </div>
+
+    <div class="ff-home-actions">
+        <button class="btn ff-button" @onclick="StartGame">Start Game</button>
+        <button class="btn ff-button" @onclick="ViewQuestions">View Questions</button>
+        <button class="btn ff-button" @onclick="RandomiseAdjective">Randomise Adjective</button>
+    </div>
+</div>

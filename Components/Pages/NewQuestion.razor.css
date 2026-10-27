@@ -1,0 +1,138 @@
+/* NewQuestion form styling */
+
+.ff-form-container {
+    width: 100%;
+    margin: 1rem;
+    display: flex;
+}
+
+.ff-form-label {
+    color: ButtonHighlight;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0.5rem;
+    display: block;
+}
+
+.ff-form-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: ButtonHighlight;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem;
+    width: 95%;
+    box-sizing: border-box;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ff-form-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: ButtonHighlight;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
+}
+
+.ff-form-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.ff-answers-table {
+    color: ButtonHighlight;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin: 0.5rem;
+}
+
+.ff-answers-table thead th {
+    color: ButtonHighlight;
+    font-weight: 600;
+    padding: 0.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.ff-answers-table tbody td {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+
+.ff-answers-table .table-number {
+    width: 5rem;
+}
+
+.ff-button-secondary {
+    color: ButtonHighlight;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.ff-button-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.ff-button-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ff-button-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.ff-form-button {
+    color: ButtonHighlight;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    flex: 1;
+}
+
+.ff-form-button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.ff-form-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.alert {
+    color: ButtonHighlight;
+    border-radius: 6px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.alert-success {
+    background: rgba(76, 175, 80, 0.2);
+    border-color: rgba(76, 175, 80, 0.4);
+}
+
+.alert-danger {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: rgba(244, 67, 54, 0.4);
+}

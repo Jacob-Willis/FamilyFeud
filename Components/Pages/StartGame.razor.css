@@ -1,0 +1,108 @@
+/* StartGame scoped styles (master variables are global) */
+
+.ff-startgame-title {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.ff-teams-container {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0 2rem 0;
+    width: 100%;
+    flex-wrap: wrap; /* allows stacking on small screens */
+}
+
+/* Input styling override for consistency */
+.ff-team-box input {
+    max-width: 100%;
+    font-size: 1.25rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+/* Color bars */
+.ff-team-color {
+    width: 100%;
+    height: 40px;
+    margin-top: 1rem;
+    border-radius: 8px;
+}
+
+.ff-team1 .ff-team-color {
+    background: linear-gradient(90deg, #ff6b6b, #ff4d4d);
+}
+
+.ff-team2 .ff-team-color {
+    background: linear-gradient(90deg, #4d79ff, #3366ff);
+}
+
+.ff-first-picker {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.25);
+    max-width: 600px;
+    margin: 0 auto 2rem auto;
+}
+
+.ff-first-picker div {
+    display: flex;
+}
+
+.ff-first-option {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+}
+
+.ff-option-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.ff-option-icon {
+    font-size: 1.2rem;
+}
+
+.ff-first-picker label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fff;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+/* Hover */
+.ff-first-option:hover .ff-option-content {
+    background: rgba(255,255,255,0.18);
+    transform: translateY(-1px);
+}
+
+/* Selected state */
+.ff-radio-hidden:checked + .ff-option-content {
+    background: rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.45);
+    transform: translateY(-2px);
+}

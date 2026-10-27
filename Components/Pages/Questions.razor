@@ -1,0 +1,57 @@
+@page "/questions"
+
+<div class="ff-page-header">
+    <button class="ff-back-button" @onclick="GoBack">Back</button>
+</div>
+
+<div class="ff-container">
+    <div class="ff-container ff-question-search">
+        <input type="text" placeholder="Search questions..." @bind="_searchText" class="ff-search-input" />
+        <select @bind="_selectedCategory" class="ff-category-select">
+            <option value="">All Categories</option>
+            @foreach (var category in GetUniqueCategories())
+            {
+                <option value="@category">@category</option>
+            }
+        </select>
+        <button class="ff-search-action-button" @onclick="NewQuestion">New Question</button>
+    </div>
+    <div class="ff-questions-list">
+        @if (_isLoading)
+        {
+            <div class="text-muted">Loading questions...</div>
+        }
+        else if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger">@_errorMessage</div>
+        }
+        else if (_questions?.Count == 0)
+        {
+            <div class="text-muted">No questions found.</div>
+        }
+        else
+        {
+            <div>
+                @foreach (var q in GetFilteredQuestions())
+                {
+                    <div class="ff-answer-container">
+                        <div class="ff-answer-container-heading">
+                            <h5 class="ff-muted">@q.QuestionText</h5>
+                            <small class="ff-muted-small">@q.Category</small>
+                            <button class="ff-button-secondary ff-button-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
+                        </div>
+                        <ul class="ff-answer-container-answers mb-0">
+                            @foreach (var a in q.Answers.OrderBy(a => a.Points))
+                            {
+                                <li>
+                                    <span class="ff-answer-container-points">@a.Points</span>
+                                    <span class="ff-answer-container-answer">@a.AnswerText</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

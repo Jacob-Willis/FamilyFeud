@@ -1,0 +1,49 @@
+./* Home page styles */
+/* (master styles are included globally from wwwroot/index.html) */
+.ff-home-hero {
+    
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 100px;
+}
+
+.ff-home-actions {
+    display: flex;
+    margin-top: auto;
+    flex-direction: row;
+    gap: 20px;
+    align-items: center;
+    padding-top: 250px;
+}
+
+.title {
+    display: flex;
+    margin-top: 40px;
+    flex-direction: column;
+    width: 600px;
+    line-height: 0.9;
+    font-weight: bolder;
+    letter-spacing: -2px;
+    font-weight: 500;
+    font-family: 'Montserrat', 'Poppins', 'Nunito';
+    letter-spacing: 2px;
+    text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000;
+    color: AccentColorText;
+}
+
+.title #wordone {
+    align-self: flex-start;
+    font-size: 70px;
+}
+
+#adjective {
+    align-self: center;
+    font-size: 90px;
+    font-weight: 700;
+}
+
+.title #wordtwo {
+    align-self: flex-end;
+    font-size: 110px;
+}

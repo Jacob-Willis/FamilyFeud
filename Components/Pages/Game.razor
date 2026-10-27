@@ -1,0 +1,86 @@
+@page "/game"
+@using FamilyFeud.Services
+
+<div class="ff-page-header">
+    <button class="ff-back-button" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
+</div>
+
+@* Blocking modal for Play/Pass choice. When open, it sits on top of the game page and other UI should be visually disabled. *@
+@if (GameState.PlayoffAwaitingChoice && GameState.WhichTeamsTurn != SelectedTeam.Random)
+{
+    <div class="ff-modal-backdrop">
+        <div class="ff-modal">
+            <h4>Play or Pass</h4>
+            <p>@(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? GameState.Team1.Name : GameState.Team2.Name) to select either:</p>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="() => GameState.ChoosePlay()">Play</button>
+                <button class="btn btn-secondary" @onclick="() => GameState.ChoosePass()">Pass</button>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="ff-container ff-container-border">
+    <div class="Teams">
+        <h3 class="ff-muted">Teams</h3>
+        <div class="d-flex gap-5">
+            <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
+                    <strong>@GameState.Team1.Name</strong>
+                    <div>Score: @GameState.Team1.Score</div>
+            </div>
+            <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
+                <strong>@GameState.Team2.Name</strong>
+                <div>Score: @GameState.Team2.Score</div>
+            </div>
+        </div>
+    </div>
+    @if (CurrentQuestion != null)
+    {
+        <div class="ff-question">
+            <p class="ff-muted">Question:</p>
+            <p class="ff-muted-small">@CurrentQuestion.QuestionText</p>
+        </div>
+    }
+    @if (GameState.mode == GameMode.PointSteal)
+    {
+        <div class="ff-muted-small">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
+    }
+</div>
+
+@if (CurrentQuestion != null)
+{
+    <div class="ff-container ff-container-border">
+        <p class="ff-muted">Answers</p>
+        <div class="ff-answer-box">
+            @foreach (var a in CurrentQuestion.Answers)
+            {
+                <button @key="@(CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item" disabled="@(IsChoiceModalOpen || GameState.IsRoundFinished)" @onclick="() => { if (!IsChoiceModalOpen && !GameState.IsRoundFinished) RevealAnswer(a); }">
+                    <div class="answer-text">@a.AnswerText</div>
+                    <div class="answer-points">@a.Points</div>
+                </button>
+            }
+        </div>
+    </div>
+}
+
+<div class="ff-page-footer fixed-bottom">
+    <div class="d-flex gap-2 align-items-center w-100">
+        <div class="d-flex align-items-center">
+            <span class="me-2">Remaining questions in category:</span>
+            <span>@(SelectedCategory == "All" ? RemainingQuestions.Count() : RemainingQuestions.Where(q => q.Category == SelectedCategory).Count())</span>
+        </div>
+        <div class="me-auto">
+            <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen)">
+                @foreach (var c in Categories)
+                {
+                    <option value="@c">@c</option>
+                }
+            </select>
+        </div>
+        <button class="btn ff-button" @onclick="async () => { if (!IsChoiceModalOpen) await LoadQuestion(); }">Load Question</button>
+        <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
+        <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) GameState.RevealAllAnswers(CurrentQuestion?.Id ?? 0); }">Reveal All Answers</button>
+        <button class="btn ff-button" disabled="@(GameState.IsRoundFinished)" @onclick="() => GameState.HostStrike()">Strike</button>
+        <span class="ff-muted">Strikes:</span><span class="ff-muted-small"> @((GameState.WhichTeamsTurn == SelectedTeam.Team1) ? ($"{GameState.Team1.IncorrectStrikes} /3") : ($"{GameState.Team2.IncorrectStrikes} /3"))</span>
+    </div>
+</div>

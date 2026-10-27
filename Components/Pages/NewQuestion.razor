@@ -1,0 +1,90 @@
+@page "/new-question"
+@page "/new-question/{QuestionId:int}"
+
+<div class="ff-page-header">
+    <button class="ff-back-button" @onclick="GoBack">Back</button>
+</div>
+
+<div class="ff-container">
+    @if (_isLoading)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-4 text-muted">@(_isEditing ? "Loading question..." : "Creating question...")</p>
+            </div>
+        </div>
+    }
+
+    <form @onsubmit="HandleSubmit" class="@(_isLoading ? "d-none" : "") ff-form-container">
+        <div class="ff-container-border">
+
+            <div>
+                <label for="questionText" class="form-label ff-form-label">Question Text</label>
+                <input type="text" class="form-control ff-form-input" id="questionText" @bind="_questionText" required />
+            </div>
+
+            <div>
+                <label for="category" class="form-label ff-form-label">Category</label>
+                <input type="text" class="form-control ff-form-input" id="category" list="categoryList" placeholder="Select or type a category" @bind="_category" />
+                <datalist id="categoryList">
+                    @foreach (var cat in _categories)
+                    {
+                        <option value="@cat" />
+                    }
+                </datalist>
+            </div>
+
+            <div>
+                <label class="form-label ff-form-label">Answers</label>
+                <table class="ff-answers-table">
+                    <thead>
+                        <tr>
+                            <th>Answer</th>
+                            <th>Points</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < _answers.Count; i++)
+                        {
+                            int index = i;
+                            <tr>
+                                <td>
+                                    <input type="text" class="form-control ff-form-input table-text" placeholder="Answer text" @bind="_answers[index].AnswerText" required />
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control ff-form-input table-number"
+                                           placeholder="0"
+                                           min="1"
+                                           value="@_answers[index].Points"
+                                           @onchange="async (ChangeEventArgs e) => await OnAnswerPointsChanged(index, e)"
+                                           required />
+                                </td>
+                                <td>
+                                    <button type="button" class="ff-button-secondary ff-button-sm" @onclick="() => RemoveAnswer(index)">Remove</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-content-center mt-3">
+                    <button type="button" class="ff-button-secondary" @onclick="AddAnswer" disabled="@(_answers.Count >= 6)">+ Add Answer</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="ff-form-button" disabled="@_isLoading">@(_isEditing ? "Update Question" : "Create Question")</button>
+                <button type="button" class="ff-form-button ff-button-secondary" @onclick="GoBack" disabled="@_isLoading">Cancel</button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_message))
+            {
+                <div class="alert @(_isSuccess ? "alert-success" : "alert-danger") mt-3">@_message</div>
+            }
+        </div>
+    </form>
+</div>

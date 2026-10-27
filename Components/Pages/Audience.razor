@@ -1,0 +1,51 @@
+@using FamilyFeud.Services
+@inject FamilyFeud.Services.GameStateService GameState
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        GameState.StateChanged += OnGameStateChanged;
+    }
+
+    private void OnGameStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        GameState.StateChanged -= OnGameStateChanged;
+    }
+}
+
+<div class="ff-container ff-container-border">
+    <div class="Teams d-flex gap-5">
+    <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
+        <p class="ff-muted-large teamname">@GameState.Team1.Name</p>
+        <p class="ff-muted-large teamscore">@GameState.Team1.Score</p>
+    </div>
+    <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
+        <p class="ff-muted-large teamname">@GameState.Team2.Name</p>
+        <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
+    </div>
+    </div>
+</div>
+
+@if (GameState.CurrentQuestion != null)
+{
+    <div class="ff-container ff-container-border">
+        <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
+        <div class="ff-answer-box">
+            @foreach (var a in GameState.CurrentQuestion.Answers)
+            {
+                var revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
+                <div @key="@(GameState.CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item audience-item @(revealed ? "revealed" : "hidden")">
+                    <div class="answer-text">@a.AnswerText</div>
+                    <div class="answer-points">@a.Points</div>
+                </div>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <p>No question loaded</p>
+}

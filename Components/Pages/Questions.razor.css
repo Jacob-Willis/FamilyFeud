@@ -1,0 +1,115 @@
+.ff-question-search {
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    gap: 1rem;
+    margin: 1rem;
+    max-width: 600px;
+    align-items: center;
+}
+
+.ff-search-input,
+.ff-category-select {
+    padding: 0.55rem 1rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    color: ButtonHighlight;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.ff-search-input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+
+.ff-search-input:focus,
+.ff-category-select:focus {
+    outline: none;
+    background: rgba(255,255,255,0.24);
+    border-color: rgba(255,255,255,0.4);
+    transform: translateY(-1px);
+}
+
+.ff-search-input:hover,
+.ff-category-select:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.35);
+}
+
+.ff-category-select option {
+    background: rgba(0,0,0,0.8);
+    color: ButtonHighlight;
+}
+
+.ff-search-action-button {
+    padding: 0.55rem 1rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(5px);
+    color: ButtonHighlight;
+    font-size: 0.975rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    white-space: nowrap;
+}
+
+.ff-search-action-button:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.35);
+    transform: translateY(-1px);
+}
+
+.ff-search-action-button:focus {
+    outline: none;
+    background: rgba(255,255,255,0.24);
+    border-color: rgba(255,255,255,0.4);
+    transform: translateY(-1px);
+}
+
+.ff-answer-container {
+    margin: 1rem;
+    border: 1px solid rgba(255,255,255,0.25);
+    backdrop-filter: blur(5px);
+    border-radius: 12px;
+    background: rgba(0,0,0,0.35);
+    max-width: 600px;
+}
+
+.ff-answer-container:hover {
+    background: rgba(0,0,0,0.15);
+    backdrop-filter: blur(5px);
+    transform: translateY(-2px);
+}
+
+.ff-answer-container-heading {
+    display: flex;
+    justify-content: space-between;
+    margin-left: 10px;
+    margin-right: 10px;
+    small {
+        font-style: italic;
+    }
+}
+
+.ff-answer-container-answers {
+    display: flex;
+    flex-direction: column;
+    color: ButtonHighlight;
+
+    li {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+}
