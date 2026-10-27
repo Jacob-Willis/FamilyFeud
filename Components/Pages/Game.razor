@@ -85,6 +85,10 @@
     {
         <div class="ff-muted-small">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
     }
+    @if (!string.IsNullOrEmpty(InfoMessage))
+    {
+        <div class="alert alert-info py-2 mb-0" role="status">@InfoMessage</div>
+    }
 </div>
 
 @if (CurrentQuestion != null)
