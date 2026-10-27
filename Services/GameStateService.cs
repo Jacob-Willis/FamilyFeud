@@ -56,6 +56,11 @@ namespace FamilyFeud.Services
         // succeeded or failed) or by AbandonRound (Reveal All mid-round). Cleared when the next question loads.
         public bool IsRoundFinished { get; private set; }
 
+        // Whether anything that counts has happened this round: a scored reveal or a strike (face-off strikes
+        // included). Unlike the face-off fields it survives the reset after a double face-off strike, so the host
+        // is asked before abandoning the round (#38). Cleared when the next question loads and by ResetGame.
+        public bool RoundHasActivity { get; private set; }
+
         public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
 
         // Number of rounds in the game (used when GameLength is Rounds). Always one of RoundOptions.
@@ -157,6 +162,7 @@ namespace FamilyFeud.Services
             // reset playoff state for the new question
             ResetPlayoffState();
             IsRoundFinished = false;  // New round, so it's not finished
+            RoundHasActivity = false;
 
             if (q != null)
             {
@@ -195,6 +201,8 @@ namespace FamilyFeud.Services
             if (q == null) return;
             Answer? ans = q.Answers.Find(a => a.Id == answerId);
             if (ans == null) return;
+
+            RoundHasActivity = true;
 
             // GameMode.PlayOff mode means they are fighting to choose who goes first
             if (Mode == GameMode.PlayOff)
@@ -314,6 +322,7 @@ namespace FamilyFeud.Services
                 // ignore strikes while the play/pass choice is pending or before a team is in control
                 if (PlayoffAwaitingChoice || WhichTeamsTurn == SelectedTeam.Random) return;
 
+                RoundHasActivity = true;
                 bool team1Striking = WhichTeamsTurn == SelectedTeam.Team1;
                 Team striker = team1Striking ? Team1 : Team2;
                 Team other = team1Striking ? Team2 : Team1;
@@ -336,6 +345,8 @@ namespace FamilyFeud.Services
                 NotifyStateChanged();
                 return;
             }
+            RoundHasActivity = true;
+
             if (Mode == GameMode.PointSteal)
             {
                 // stealing team failed: the team in control keeps the pool
@@ -445,6 +456,7 @@ namespace FamilyFeud.Services
             // face-off answers, strikes, Play/Pass choice, round pool and mode back to PlayOff
             ResetPlayoffState();
             IsRoundFinished = false;
+            RoundHasActivity = false;
             // no current question means the next SetCurrentQuestion is the first one, so it won't flip StartingTeam
             CurrentQuestion = null;
             _revealedAnswers.Clear();

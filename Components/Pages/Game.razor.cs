@@ -48,24 +48,14 @@ namespace FamilyFeud.Components.Pages
             && !GameState.IsGameOver;
 
         // A round is in progress once a question is loaded, the round isn't finished, some answers are still
-        // hidden, and at least one answer has been revealed, a strike or face-off answer given, or play has moved past the face-off
+        // hidden, and the round has had a scored reveal or a strike (including a double face-off strike, #38)
         private bool IsRoundInProgress
         {
             get
             {
-                if (CurrentQuestion == null || GameState.IsRoundFinished) return false;
+                if (CurrentQuestion == null || GameState.IsRoundFinished || !GameState.RoundHasActivity) return false;
 
-                bool anyRevealed = CurrentQuestion.Answers.Any(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
-                bool allRevealed = CurrentQuestion.Answers.All(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
-                if (allRevealed) return false;
-
-                bool anyStrike = GameState.Team1.IncorrectStrikes > 0
-                    || GameState.Team2.IncorrectStrikes > 0
-                    || GameState.Team1.FirstAnswer != null
-                    || GameState.Team2.FirstAnswer != null
-                    || GameState.Mode != GameMode.PlayOff;
-
-                return anyRevealed || anyStrike;
+                return !CurrentQuestion.Answers.All(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
             }
         }
 
