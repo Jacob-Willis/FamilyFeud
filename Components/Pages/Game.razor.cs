@@ -23,11 +23,27 @@ namespace FamilyFeud.Components.Pages
         // Short info message for the host, e.g. when the selected category has run out of questions (#14, #28)
         private string? InfoMessage { get; set; }
 
-        // Categories for optional filtering (includes "All")
-        private List<string> Categories { get; set; } = new List<string>();
+        // Categories for optional filtering ("All" first, then every category that has a question in the cache).
+        // Worked out from GameState.Questions on every render, so categories added or emptied on the Questions
+        // page show up straight away (#41). Categories with no unasked questions stay listed, so picking one
+        // still gives the "No questions left in X" fallback (#14).
+        private List<string> Categories => BuildCategories();
 
-        // Selected category for filtering; "All" means no filtering
-        private string SelectedCategory { get; set; } = "All";
+        // The category the host picked in the dropdown
+        private string _selectedCategory = "All";
+
+        // Selected category for filtering; "All" means no filtering. If the picked category no longer has any
+        // questions in the cache it reads as "All", so the dropdown and the filter never point at a missing
+        // category (#41). The match ignores case, like QuestionsInSelectedCategory (#31).
+        private string SelectedCategory
+        {
+            get
+            {
+                string? current = Categories.FirstOrDefault(c => string.Equals(c, _selectedCategory, StringComparison.OrdinalIgnoreCase));
+                return current ?? "All";
+            }
+            set => _selectedCategory = string.IsNullOrEmpty(value) ? "All" : value;
+        }
 
         // The audience window, kept so it can be closed again (toggle, Back, or leaving this page)
         private Window? _audienceWindow;
@@ -82,13 +98,12 @@ namespace FamilyFeud.Components.Pages
                 await GameState.LoadQuestionsAsync();
             }
 
-            BuildCategories();
             GameState.StateChanged += OnGameStateChanged;
         }
 
         private void OnGameStateChanged() => InvokeAsync(StateHasChanged);
 
-        private void BuildCategories()
+        private List<string> BuildCategories()
         {
             List<string> cats = (GameState.Questions ?? new List<Question>())
                 .Where(q => !string.IsNullOrWhiteSpace(q.Category))
@@ -97,11 +112,9 @@ namespace FamilyFeud.Components.Pages
                 .OrderBy(c => c)
                 .ToList();
 
-            Categories = new List<string> { "All" };
-            Categories.AddRange(cats);
-
-            if (!Categories.Contains(SelectedCategory))
-                SelectedCategory = "All";
+            List<string> categories = new List<string> { "All" };
+            categories.AddRange(cats);
+            return categories;
         }
 
         // Remaining questions in the selected category ("All" means every remaining question). LoadQuestion and the
@@ -193,12 +206,11 @@ namespace FamilyFeud.Components.Pages
 
         private void GoToQuestions() => Navigation.NavigateTo("/questions");
 
-        // Fetch the questions from Hasura and rebuild the categories from them. RemainingQuestions follows
-        // automatically and still leaves out questions already asked this game.
+        // Fetch the questions from Hasura. The categories and RemainingQuestions follow automatically, and the
+        // remaining pool still leaves out questions already asked this game.
         private async Task ReloadQuestionsAsync()
         {
             await GameState.LoadQuestionsAsync();
-            BuildCategories();
         }
 
         // Retry button on the load error alert (#15). Like Load Question, only load from Hasura if nothing was
