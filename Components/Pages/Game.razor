@@ -105,6 +105,14 @@
             <button class="btn btn-sm btn-outline-danger" @onclick="RetryLoadQuestions">Retry</button>
         </div>
     }
+    else if (NoQuestionsFound)
+    {
+        @* The load worked but there are no questions to play (#33) *@
+        <div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-3" role="status">
+            <span class="me-auto">No questions found — add some on the Questions page.</span>
+            <button class="btn btn-sm btn-outline-primary" @onclick="GoToQuestions">Go to Questions</button>
+        </div>
+    }
 </div>
 
 @if (CurrentQuestion != null)

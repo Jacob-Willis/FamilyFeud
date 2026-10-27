@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -157,32 +158,73 @@ mutation DeleteQuestion($id: Int!) {
             return res?.DeleteQuestionsByPk != null;
         }
 
-        // Generic request sender with error handling
+        // Longest GraphQL error text passed on to the UI; the full text always goes to the debug output (#33)
+        private const int MaxErrorDetailLength = 150;
+
+        // Generic request sender with error handling. Exception messages are short and friendly because the
+        // pages show them to the host as-is; the full details (status, response body, inner exception) go to
+        // the debug output instead (#33).
         private async Task<T?> SendRequestAsync<T>(GraphQLRequest request)
             where T : class
         {
-            using HttpResponseMessage httpResponse = await _httpClient.PostAsJsonAsync(string.Empty, request, _jsonOptions).ConfigureAwait(false);
-
-            if (!httpResponse.IsSuccessStatusCode)
+            HttpResponseMessage httpResponse;
+            try
             {
-                string content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
-                throw new HttpRequestException($"GraphQL HTTP error: {httpResponse.StatusCode}, Content: {content}");
+                httpResponse = await _httpClient.PostAsJsonAsync(string.Empty, request, _jsonOptions).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                Debug.WriteLine($"Hasura request failed: {ex}");
+                throw new HttpRequestException("Couldn't reach the question server. Check the internet connection.", ex);
+            }
+            catch (TaskCanceledException ex)
+            {
+                // HttpClient reports a timeout as a cancelled task
+                Debug.WriteLine($"Hasura request timed out: {ex}");
+                throw new TimeoutException("The question server took too long to respond.", ex);
             }
 
-            GraphQLResponse<T>? graphResponse = await httpResponse.Content.ReadFromJsonAsync<GraphQLResponse<T>>(_jsonOptions).ConfigureAwait(false);
-
-            if (graphResponse == null)
+            using (httpResponse)
             {
-                throw new InvalidOperationException("Invalid response from GraphQL endpoint.");
-            }
+                if (!httpResponse.IsSuccessStatusCode)
+                {
+                    string content = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+                    Debug.WriteLine($"Hasura HTTP error: {(int)httpResponse.StatusCode} {httpResponse.StatusCode}, Content: {content}");
+                    throw new HttpRequestException($"Couldn't reach the question server (HTTP {(int)httpResponse.StatusCode}).", null, httpResponse.StatusCode);
+                }
 
-            if (graphResponse.Errors != null && graphResponse.Errors.Count > 0)
-            {
-                string messages = string.Join("; ", graphResponse.Errors.Select(e => e.Message));
-                throw new InvalidOperationException($"GraphQL errors: {messages}");
-            }
+                GraphQLResponse<T>? graphResponse;
+                try
+                {
+                    graphResponse = await httpResponse.Content.ReadFromJsonAsync<GraphQLResponse<T>>(_jsonOptions).ConfigureAwait(false);
+                }
+                catch (Exception ex) when (ex is JsonException || ex is NotSupportedException)
+                {
+                    // NotSupportedException: the body wasn't JSON at all (e.g. an HTML page from a wrong URL)
+                    Debug.WriteLine($"Hasura response could not be parsed: {ex}");
+                    graphResponse = null;
+                }
 
-            return graphResponse.Data;
+                if (graphResponse == null)
+                {
+                    throw new InvalidOperationException("The question server sent a response the app couldn't read.");
+                }
+
+                if (graphResponse.Errors != null && graphResponse.Errors.Count > 0)
+                {
+                    string messages = string.Join("; ", graphResponse.Errors.Select(e => e.Message));
+                    Debug.WriteLine($"Hasura GraphQL errors: {messages}");
+                    // Keep the first error (e.g. a constraint or permission message) so save and delete errors still say why
+                    string detail = graphResponse.Errors[0].Message.Trim();
+                    if (detail.Length > MaxErrorDetailLength)
+                        detail = detail.Substring(0, MaxErrorDetailLength) + "...";
+                    throw new InvalidOperationException(string.IsNullOrWhiteSpace(detail)
+                        ? "The question server returned an error."
+                        : $"The question server returned an error: {detail}");
+                }
+
+                return graphResponse.Data;
+            }
         }
 
         // Response DTOs matching the GraphQL shape

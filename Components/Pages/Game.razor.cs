@@ -135,6 +135,8 @@ namespace FamilyFeud.Components.Pages
                 await ReloadQuestionsAsync();
                 // the load failed: the error alert with its Retry button says so, no need for "No questions left" (#15)
                 if (HasLoadError) return;
+                // nothing in Hasura at all: the "No questions found" message already says so (#33)
+                if (NoQuestionsFound) return;
             }
 
             if (RemainingQuestions.Count == 0)
@@ -169,6 +171,11 @@ namespace FamilyFeud.Components.Pages
 
         // Loading questions from Hasura failed; the message comes from the shared game state (#15)
         private bool HasLoadError => !GameState.IsLoading && !string.IsNullOrEmpty(GameState.ErrorMessage);
+
+        // The load worked but Hasura has no questions at all, so the board would be empty with no hint why (#33)
+        private bool NoQuestionsFound => !GameState.IsLoading && !HasLoadError && GameState.Questions.Count == 0;
+
+        private void GoToQuestions() => Navigation.NavigateTo("/questions");
 
         // Fetch the questions from Hasura and rebuild the remaining pool and categories from them
         private async Task ReloadQuestionsAsync()
