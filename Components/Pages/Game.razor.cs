@@ -67,8 +67,24 @@ namespace FamilyFeud.Components.Pages
                 SelectedCategory = "All";
         }
 
+        // "Round X of N" or "First to N points", shown under the round pool
+        private string GameProgressText => GameState.GameLength == GameLengthMode.Rounds
+            ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
+            : $"First to {GameState.TargetScore} points (round {GameState.CurrentRoundNumber})";
+
+        // Placeholder text until the winning screen (#8) is built
+        private string GameOverText => GameState.Winner switch
+        {
+            SelectedTeam.Team1 => $"{GameState.Team1.Name} wins {GameState.Team1.Score} to {GameState.Team2.Score}.",
+            SelectedTeam.Team2 => $"{GameState.Team2.Name} wins {GameState.Team2.Score} to {GameState.Team1.Score}.",
+            _ => $"It's a tie at {GameState.Team1.Score} points."
+        };
+
         private async Task LoadQuestion()
         {
+            // no new rounds once the game is over
+            if (GameState.IsGameOver) return;
+
             // Refill remaining if exhausted
             if (RemainingQuestions == null || RemainingQuestions.Count == 0)
             {

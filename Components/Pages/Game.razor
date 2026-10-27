@@ -34,7 +34,16 @@
             </div>
         </div>
         <p class="ff-muted mt-3 mb-0">Round pool: @GameState.RoundPool</p>
+        <p class="ff-muted-small mb-0">@GameProgressText</p>
     </div>
+    @if (GameState.IsGameOver)
+    {
+        @* Placeholder until the winning screen (#8) replaces it *@
+        <div class="alert alert-info mt-3 mb-0 text-center">
+            <strong>Game over</strong>
+            <div>@GameOverText</div>
+        </div>
+    }
     @if (CurrentQuestion != null)
     {
         <div class="ff-question">
@@ -71,14 +80,14 @@
             <span>@(SelectedCategory == "All" ? RemainingQuestions.Count() : RemainingQuestions.Where(q => q.Category == SelectedCategory).Count())</span>
         </div>
         <div class="me-auto">
-            <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen)">
+            <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
                 @foreach (var c in Categories)
                 {
                     <option value="@c">@c</option>
                 }
             </select>
         </div>
-        <button class="btn ff-button" @onclick="async () => { if (!IsChoiceModalOpen) await LoadQuestion(); }">Load Question</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver)" @onclick="async () => { if (!IsChoiceModalOpen) await LoadQuestion(); }">Load Question</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) GameState.RevealAllAnswers(CurrentQuestion?.Id ?? 0); }">Reveal All Answers</button>
         <button class="btn ff-button" disabled="@(GameState.IsRoundFinished)" @onclick="() => GameState.HostStrike()">Strike</button>

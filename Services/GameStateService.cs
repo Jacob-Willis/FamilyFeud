@@ -50,6 +50,9 @@ namespace FamilyFeud.Services
 
         public void SetCurrentQuestion(Question? q)
         {
+            // no new rounds once the game is over (ResetGame starts a new game)
+            if (IsGameOver && q != null) return;
+
             // Check if this is the first question being set
             bool isFirstQuestion = CurrentQuestion == null;
 
@@ -58,6 +61,8 @@ namespace FamilyFeud.Services
             if (q != null)
             {
                 _revealedAnswers.Remove(q.Id);
+                // remember it so EndRound can end the game when the question pool runs out
+                _askedQuestionIds.Add(q.Id);
             }
             // reset playoff state for the new question
             ResetPlayoffState();
@@ -317,6 +322,60 @@ namespace FamilyFeud.Services
         // Whether the current round is finished (all answers revealed or strikes exhausted)
         public bool IsRoundFinished { get; set; } = false;
 
+        // Game length, chosen on the start screen with SetGameLength
+        public const GameLengthMode DefaultGameLength = GameLengthMode.Rounds;
+        public const int DefaultTotalRounds = 5;
+        public const int DefaultTargetScore = 300;
+        public static readonly IReadOnlyList<int> RoundOptions = new[] { 5, 10, 15, 20 };
+
+        public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
+
+        // Number of rounds in the game (used when GameLength is Rounds). Always one of RoundOptions.
+        public int TotalRounds { get; private set; } = DefaultTotalRounds;
+
+        // Points a team needs to win (used when GameLength is TargetScore)
+        public int TargetScore { get; private set; } = DefaultTargetScore;
+
+        // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question doesn't count.
+        public int RoundsPlayed { get; private set; }
+
+        // Set by EndRound when the chosen length is reached or no questions are left. No new rounds start after this.
+        public bool IsGameOver { get; private set; }
+
+        // Ids of questions loaded this game; when every cached question has been asked the game ends
+        private readonly HashSet<int> _askedQuestionIds = new();
+
+        // The round the host is on: the next round before a question loads, the finished round after it ends
+        public int CurrentRoundNumber
+        {
+            get
+            {
+                int round = IsRoundFinished ? RoundsPlayed : RoundsPlayed + 1;
+                return GameLength == GameLengthMode.Rounds ? Math.Min(round, TotalRounds) : round;
+            }
+        }
+
+        // The team with the higher score once the game is over; Random means the game isn't over or it's a tie
+        public SelectedTeam Winner
+        {
+            get
+            {
+                if (!IsGameOver || Team1.Score == Team2.Score) return SelectedTeam.Random;
+                return Team1.Score > Team2.Score ? SelectedTeam.Team1 : SelectedTeam.Team2;
+            }
+        }
+
+        // Called by the start screen. Rounds must be one of RoundOptions and the target score must be positive.
+        public void SetGameLength(GameLengthMode lengthMode, int totalRounds, int targetScore)
+        {
+            if (!RoundOptions.Contains(totalRounds)) throw new ArgumentOutOfRangeException(nameof(totalRounds));
+            if (targetScore <= 0) throw new ArgumentOutOfRangeException(nameof(targetScore));
+            GameLength = lengthMode;
+            TotalRounds = totalRounds;
+            TargetScore = targetScore;
+            NotifyStateChanged();
+        }
+
         public event Action? StateChanged;
 
         public void IncrementScore(SelectedTeam team, int delta = 1)
@@ -382,6 +441,13 @@ namespace FamilyFeud.Services
             StartingTeam = SelectedTeam.Random;
             Team1.Name = "Team 1";
             Team2.Name = "Team 2";
+            // game length back to defaults (the start screen sets it again) and progress cleared
+            GameLength = DefaultGameLength;
+            TotalRounds = DefaultTotalRounds;
+            TargetScore = DefaultTargetScore;
+            RoundsPlayed = 0;
+            IsGameOver = false;
+            _askedQuestionIds.Clear();
             NotifyStateChanged();
         }
 
@@ -419,7 +485,21 @@ namespace FamilyFeud.Services
             else if (winner == SelectedTeam.Team2) Team2.Score += RoundPool;
             RoundPool = 0;
             IsRoundFinished = true;
+            RoundsPlayed++;
+            IsGameOver = IsGameLengthReached() || NoQuestionsLeft();
             NotifyStateChanged();
+        }
+
+        private bool IsGameLengthReached()
+        {
+            if (GameLength == GameLengthMode.Rounds) return RoundsPlayed >= TotalRounds;
+            return Team1.Score >= TargetScore || Team2.Score >= TargetScore;
+        }
+
+        // True when every loaded question has been asked this game, so no further round can start
+        private bool NoQuestionsLeft()
+        {
+            return Questions.Count > 0 && Questions.All(q => _askedQuestionIds.Contains(q.Id));
         }
 
         public async Task LoadQuestionsAsync()
@@ -466,6 +546,12 @@ namespace FamilyFeud.Services
         {
             CurrentTeam = CurrentTeam == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
         }
+    }
+
+    public enum GameLengthMode
+    {
+        Rounds,
+        TargetScore
     }
 
     public enum GameMode
