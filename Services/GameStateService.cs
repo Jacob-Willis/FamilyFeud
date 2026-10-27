@@ -205,6 +205,10 @@ namespace FamilyFeud.Services
 
         public void RevealAnswer(int questionId, int answerId)
         {
+            // the face-off is decided and the host still has to choose Play or Pass: no more reveals until then (#49).
+            // Checked before the answer is marked revealed, so it stays hidden and can be revealed after the choice.
+            if (Mode == GameMode.PlayOff && PlayoffAwaitingChoice && !IsRoundFinished) return;
+
             if (!_revealedAnswers.TryGetValue(questionId, out HashSet<int>? set))
             {
                 set = new HashSet<int>();
