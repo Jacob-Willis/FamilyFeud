@@ -169,12 +169,9 @@ namespace FamilyFeud.Components.Pages
             // Close audience window before navigating back
             try { if (_audienceWindow != null) Application.Current.CloseWindow(_audienceWindow); } catch { }
             _audienceWindow = null;
-            // no remote server to stop
+            // start the next game from scratch: scores, strikes, pool, question, turn and team names
+            GameState.ResetGame();
             Navigation.NavigateTo("/startgame");
-            GameState.SetCurrentQuestion(null);
-            // reset gamestate team names as well
-            GameState.Team1.Name = "Team 1";
-            GameState.Team2.Name = "Team 2";
         }
     }
 }
