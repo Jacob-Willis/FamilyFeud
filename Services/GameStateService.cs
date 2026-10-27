@@ -44,9 +44,6 @@ namespace FamilyFeud.Services
         // Ids of the questions asked this game, read-only (#32). Cleared by ResetGame.
         public IReadOnlyCollection<int> AskedQuestionIds => _askedQuestionIds;
 
-        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
-        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
-
         // Cached questions not asked yet this game. Computed on demand from Questions, so questions deleted
         // mid-game drop out straight away and the pool survives the Game page being re-created (#32).
         public List<Question> RemainingQuestions => Questions.Where(q => !HasBeenAsked(q.Id)).ToList();
@@ -173,6 +170,9 @@ namespace FamilyFeud.Services
             Team2 = new Team("Team 2");
             Mode = GameMode.PlayOff;
         }
+
+        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
+        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
 
         public void SetCurrentQuestion(Question? q)
         {
