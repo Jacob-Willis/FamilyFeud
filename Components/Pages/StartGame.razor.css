@@ -100,8 +100,9 @@
     transform: translateY(-1px);
 }
 
-/* Selected state */
-.ff-radio-hidden:checked + .ff-option-content {
+/* Selected state (hidden radios, and the visible game length checkboxes) */
+.ff-radio-hidden:checked + .ff-option-content,
+.ff-length-check:checked + .ff-option-content {
     background: rgba(255,255,255,0.28);
     border: 1px solid rgba(255,255,255,0.45);
     transform: translateY(-2px);
@@ -112,6 +113,13 @@
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
+}
+
+/* Game length checkbox sits next to its label, before the highlighted text */
+.ff-length-check {
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
 }
 
 .ff-length-picker .form-select,

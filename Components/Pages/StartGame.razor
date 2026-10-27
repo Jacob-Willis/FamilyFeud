@@ -57,16 +57,14 @@
             </div>
         </InputRadioGroup>
 
-        <p class="ff-muted mb-0">Game length</p>
+        <p class="ff-muted mb-0">Game length (whichever is reached first)</p>
         <div class="ff-length-picker">
             <label class="ff-first-option">
-                <input type="radio" class="ff-radio-hidden" name="ff-game-length"
-                       checked="@(LengthMode == GameLengthMode.Rounds)"
-                       @onchange="() => LengthMode = GameLengthMode.Rounds" />
+                <input type="checkbox" class="form-check-input ff-length-check" @bind="UseRounds" />
                 <span class="ff-option-content">Number of rounds</span>
             </label>
             <select class="form-select w-auto" aria-label="Number of rounds" @bind="TotalRounds"
-                    disabled="@(LengthMode != GameLengthMode.Rounds)">
+                    disabled="@(!UseRounds)">
                 @foreach (int option in GameStateService.RoundOptions)
                 {
                     <option value="@option">@option</option>
@@ -75,15 +73,17 @@
         </div>
         <div class="ff-length-picker">
             <label class="ff-first-option">
-                <input type="radio" class="ff-radio-hidden" name="ff-game-length"
-                       checked="@(LengthMode == GameLengthMode.TargetScore)"
-                       @onchange="() => LengthMode = GameLengthMode.TargetScore" />
+                <input type="checkbox" class="form-check-input ff-length-check" @bind="UseTargetScore" />
                 <span class="ff-option-content">Target score</span>
             </label>
             <input type="number" class="form-control w-auto" aria-label="Target score" min="1" max="@MaxTargetScore" step="50"
-                   @bind="TargetScore" disabled="@(LengthMode != GameLengthMode.TargetScore)" />
+                   @bind="TargetScore" disabled="@(!UseTargetScore)" />
             <span class="ff-muted-small">points</span>
         </div>
+        @if (!HasGameLength)
+        {
+            <p class="text-danger mb-0">Choose number of rounds, a target score, or both.</p>
+        }
         @if (!IsTargetScoreValid)
         {
             <p class="text-danger mb-0">Target score must be a whole number from 1 to @MaxTargetScore.</p>

@@ -20,7 +20,7 @@ From the home screen, click **Start Game**. On the start screen:
 
 - Type a name for each team.
 - Under **Who goes first?**, pick a team or **Random**. The starting team then alternates for every question after the first.
-- Under **Game length**, choose **Number of rounds** (5, 10, 15 or 20) or **Target score** (the first team to reach that many points wins; 1 to 10,000, 300 by default).
+- Under **Game length**, tick **Number of rounds** (5, 10, 15 or 20), **Target score** (the first team to reach that many points wins; 1 to 10,000, 300 by default), or both. With both ticked, the game ends at whichever comes first. At least one must be ticked; by default the game is 5 rounds with no target score.
 - Click **Start**.
 
 ![Start Game screen](docs/screenshots/start-game.png)
@@ -66,7 +66,7 @@ When the round ends, the pool is added to the winning team's score and is reset.
 
 ### 7. Winning
 
-The game ends when the chosen number of rounds has been played, when a team reaches the target score, or when there are no questions left. The host board and the audience window then show a winning screen with the final scores. Click **New game** to return to the start screen.
+The game ends as soon as one of these happens: the chosen number of rounds has been played, a team reaches the target score, or there are no questions left. If the last round also takes a team to the target score, the winning screen reports the target score. The host board and the audience window then show a winning screen with the final scores. Click **New game** to return to the start screen.
 
 ![Winning screen on the host board](docs/screenshots/winner-host.png)
 

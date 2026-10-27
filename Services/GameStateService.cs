@@ -7,9 +7,10 @@ namespace FamilyFeud.Services
     // turn control and game length. Registered as a singleton so the host and audience windows share it.
     public class GameStateService
     {
-        // Game length, chosen on the start screen with SetGameLength
-        public const GameLengthMode DefaultGameLength = GameLengthMode.Rounds;
+        // Game length, chosen on the start screen with SetGameLength: a number of rounds, a target score, or both
+        // (whichever is reached first ends the game). New games default to 5 rounds and no target score.
         public const int DefaultTotalRounds = 5;
+        // Value the start screen's target score box starts with; not a limit until the host ticks Target score
         public const int DefaultTargetScore = 300;
         public static readonly IReadOnlyList<int> RoundOptions = new[] { 5, 10, 15, 20 };
 
@@ -71,13 +72,11 @@ namespace FamilyFeud.Services
         // is asked before abandoning the round (#38). Cleared when the next question loads and by ResetGame.
         public bool RoundHasActivity { get; private set; }
 
-        public GameLengthMode GameLength { get; private set; } = DefaultGameLength;
+        // Number of rounds in the game, or null for no round limit. When set, always one of RoundOptions.
+        public int? TotalRounds { get; private set; } = DefaultTotalRounds;
 
-        // Number of rounds in the game (used when GameLength is Rounds). Always one of RoundOptions.
-        public int TotalRounds { get; private set; } = DefaultTotalRounds;
-
-        // Points a team needs to win (used when GameLength is TargetScore)
-        public int TargetScore { get; private set; } = DefaultTargetScore;
+        // Points a team needs to win, or null for no target score. When set, always positive.
+        public int? TargetScore { get; private set; }
 
         // Rounds that have ended (counted in EndRound). A round abandoned by loading a new question or by Reveal All doesn't count.
         public int RoundsPlayed { get; private set; }
@@ -94,7 +93,23 @@ namespace FamilyFeud.Services
             get
             {
                 int round = IsRoundFinished ? RoundsPlayed : RoundsPlayed + 1;
-                return GameLength == GameLengthMode.Rounds ? Math.Min(round, TotalRounds) : round;
+                return TotalRounds is int total ? Math.Min(round, total) : round;
+            }
+        }
+
+        // Progress line for both windows, showing whichever limits are set: "Round 2 of 10",
+        // "First to 300 points (round 2)", or "Round 2 of 10 · First to 300 points"
+        public string GameProgressText
+        {
+            get
+            {
+                if (TotalRounds is int total && TargetScore is int target)
+                    return $"Round {CurrentRoundNumber} of {total} · First to {target} points";
+                if (TotalRounds is int rounds)
+                    return $"Round {CurrentRoundNumber} of {rounds}";
+                if (TargetScore is int score)
+                    return $"First to {score} points (round {CurrentRoundNumber})";
+                return $"Round {CurrentRoundNumber}";
             }
         }
 
@@ -419,12 +434,14 @@ namespace FamilyFeud.Services
             return _revealedAnswers.TryGetValue(questionId, out HashSet<int>? set) && set.Contains(answerId);
         }
 
-        // Called by the start screen. Rounds must be one of RoundOptions and the target score must be positive.
-        public void SetGameLength(GameLengthMode lengthMode, int totalRounds, int targetScore)
+        // Called by the start screen. Pass null to leave a limit off, but at least one must be set. Rounds must be
+        // one of RoundOptions and the target score must be positive. The game ends at whichever limit is reached first.
+        public void SetGameLength(int? totalRounds, int? targetScore)
         {
-            if (!RoundOptions.Contains(totalRounds)) throw new ArgumentOutOfRangeException(nameof(totalRounds));
-            if (targetScore <= 0) throw new ArgumentOutOfRangeException(nameof(targetScore));
-            GameLength = lengthMode;
+            if (totalRounds == null && targetScore == null)
+                throw new ArgumentException("Choose a number of rounds, a target score, or both.");
+            if (totalRounds is int rounds && !RoundOptions.Contains(rounds)) throw new ArgumentOutOfRangeException(nameof(totalRounds));
+            if (targetScore is int target && target <= 0) throw new ArgumentOutOfRangeException(nameof(targetScore));
             TotalRounds = totalRounds;
             TargetScore = targetScore;
             NotifyStateChanged();
@@ -481,9 +498,8 @@ namespace FamilyFeud.Services
             Team1.Name = "Team 1";
             Team2.Name = "Team 2";
             // game length back to defaults (the start screen sets it again) and progress cleared
-            GameLength = DefaultGameLength;
             TotalRounds = DefaultTotalRounds;
-            TargetScore = DefaultTargetScore;
+            TargetScore = null;
             RoundsPlayed = 0;
             IsGameOver = false;
             EndReason = GameEndReason.None;
@@ -526,8 +542,11 @@ namespace FamilyFeud.Services
             RoundPool = 0;
             IsRoundFinished = true;
             RoundsPlayed++;
-            if (IsGameLengthReached())
-                EndReason = GameLength == GameLengthMode.Rounds ? GameEndReason.RoundsPlayed : GameEndReason.TargetScore;
+            // If the same round reaches both limits, the target score is reported: a team actually reached it
+            if (IsTargetScoreReached())
+                EndReason = GameEndReason.TargetScore;
+            else if (TotalRounds is int total && RoundsPlayed >= total)
+                EndReason = GameEndReason.RoundsPlayed;
             else if (NoQuestionsLeft())
                 EndReason = GameEndReason.OutOfQuestions;
             IsGameOver = EndReason != GameEndReason.None;
@@ -550,10 +569,9 @@ namespace FamilyFeud.Services
             }
         }
 
-        private bool IsGameLengthReached()
+        private bool IsTargetScoreReached()
         {
-            if (GameLength == GameLengthMode.Rounds) return RoundsPlayed >= TotalRounds;
-            return Team1.Score >= TargetScore || Team2.Score >= TargetScore;
+            return TargetScore is int target && (Team1.Score >= target || Team2.Score >= target);
         }
 
         // True when no cached question is left to ask, so no further round can start. Uses the same notion of
@@ -595,12 +613,6 @@ namespace FamilyFeud.Services
         Random,
         Team1,
         Team2
-    }
-
-    public enum GameLengthMode
-    {
-        Rounds,
-        TargetScore
     }
 
     public enum GameEndReason
