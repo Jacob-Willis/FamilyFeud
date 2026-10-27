@@ -200,7 +200,7 @@
             <span>@QuestionsInSelectedCategory().Count</span>
         </div>
         <div class="me-auto">
-            <select class="ff-select ff-footer-select" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
+            <select class="ff-select ff-footer-select" aria-label="Question category" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
                 <option value="@AllCategories">@CategoryLabel(AllCategories)</option>
                 @foreach (string c in Categories)
                 {
