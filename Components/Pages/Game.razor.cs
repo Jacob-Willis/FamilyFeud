@@ -13,8 +13,9 @@ namespace FamilyFeud.Components.Pages
         [Inject]
         private GameStateService GameState { get; set; } = null!;
 
-        // Questions not yet asked this game; asked ones are removed so they aren't repeated
-        private List<Question> RemainingQuestions { get; set; } = new List<Question>();
+        // Questions not yet asked this game, worked out by the shared game state each time so it survives this
+        // page being re-created and drops questions deleted mid-game straight away (#32)
+        private List<Question> RemainingQuestions => GameState.RemainingQuestions;
 
         // Current question shown in UI; read from the shared state so the host and audience views always match (#14)
         private Question? CurrentQuestion => GameState.CurrentQuestion;
@@ -80,8 +81,6 @@ namespace FamilyFeud.Components.Pages
                 await GameState.LoadQuestionsAsync();
             }
 
-            // Copy questions locally so we can remove asked ones without mutating the shared list
-            RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
             BuildCategories();
             GameState.StateChanged += OnGameStateChanged;
         }
@@ -130,7 +129,7 @@ namespace FamilyFeud.Components.Pages
 
             // Only load from Hasura if nothing was ever loaded (e.g. the first load failed). Never refill the
             // remaining pool from the cache mid-game, because that would repeat questions already asked (#28).
-            if ((GameState.Questions == null || GameState.Questions.Count == 0) && RemainingQuestions.Count == 0)
+            if (GameState.Questions == null || GameState.Questions.Count == 0)
             {
                 await ReloadQuestionsAsync();
                 // the load failed: the error alert with its Retry button says so, no need for "No questions left" (#15)
@@ -160,11 +159,9 @@ namespace FamilyFeud.Components.Pages
             Random rand = new Random();
             Question next = pool[rand.Next(0, pool.Count)];
 
-            // Update shared game state so the audience window displays the same question
+            // Update shared game state so the audience window displays the same question. This also marks it
+            // as asked, which takes it out of RemainingQuestions so it won't be repeated.
             GameState.SetCurrentQuestion(next);
-
-            // Remove the asked question from remaining so it won't be repeated
-            RemainingQuestions.RemoveAll(q => q.Id == next.Id);
 
             StateHasChanged();
         }
@@ -177,11 +174,11 @@ namespace FamilyFeud.Components.Pages
 
         private void GoToQuestions() => Navigation.NavigateTo("/questions");
 
-        // Fetch the questions from Hasura and rebuild the remaining pool and categories from them
+        // Fetch the questions from Hasura and rebuild the categories from them. RemainingQuestions follows
+        // automatically and still leaves out questions already asked this game.
         private async Task ReloadQuestionsAsync()
         {
             await GameState.LoadQuestionsAsync();
-            RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
             BuildCategories();
         }
 

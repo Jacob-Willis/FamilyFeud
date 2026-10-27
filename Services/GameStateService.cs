@@ -35,6 +35,16 @@ namespace FamilyFeud.Services
 
         public List<Question> Questions { get; private set; } = new();
 
+        // Ids of the questions asked this game, read-only (#32). Cleared by ResetGame.
+        public IReadOnlyCollection<int> AskedQuestionIds => _askedQuestionIds;
+
+        // Whether the question has been loaded this game, so it shouldn't be asked again (#32)
+        public bool HasBeenAsked(int questionId) => _askedQuestionIds.Contains(questionId);
+
+        // Cached questions not asked yet this game. Computed on demand from Questions, so questions deleted
+        // mid-game drop out straight away and the pool survives the Game page being re-created (#32).
+        public List<Question> RemainingQuestions => Questions.Where(q => !HasBeenAsked(q.Id)).ToList();
+
         // Currently active question, shared by the host and audience windows
         public Question? CurrentQuestion { get; private set; }
 
@@ -362,7 +372,8 @@ namespace FamilyFeud.Services
         // Reveal all answers for the given question without awarding any points
         public void RevealAllAnswers(int questionId)
         {
-            Question? q = Questions.Find(x => x.Id == questionId);
+            // prefer the current question so Reveal All still works if it was deleted from the cache mid-game (#32)
+            Question? q = (CurrentQuestion?.Id == questionId) ? CurrentQuestion : Questions.Find(x => x.Id == questionId);
             if (q == null) return;
 
             if (!_revealedAnswers.TryGetValue(questionId, out HashSet<int>? set))
@@ -430,7 +441,7 @@ namespace FamilyFeud.Services
         }
 
         // Clears all game state so the next game starts fresh (used when the host goes back to the start screen).
-        // The loaded Questions cache is kept; the Game page rebuilds its remaining-questions pool from it.
+        // The loaded Questions cache is kept; clearing the asked ids makes every question remaining again.
         public void ResetGame()
         {
             ClearScores();
@@ -504,10 +515,12 @@ namespace FamilyFeud.Services
             return Team1.Score >= TargetScore || Team2.Score >= TargetScore;
         }
 
-        // True when every loaded question has been asked this game, so no further round can start
+        // True when no cached question is left to ask, so no further round can start. Uses the same notion of
+        // "remaining" as the Game page, so questions deleted mid-game don't keep the game going and deleting
+        // every question still ends the game (#32).
         private bool NoQuestionsLeft()
         {
-            return Questions.Count > 0 && Questions.All(q => _askedQuestionIds.Contains(q.Id));
+            return _askedQuestionIds.Count > 0 && !Questions.Any(q => !HasBeenAsked(q.Id));
         }
 
         public async Task LoadQuestionsAsync()
