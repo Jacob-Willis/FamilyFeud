@@ -72,6 +72,11 @@ namespace FamilyFeud.Components.Pages
                 // If first not selected, default to random
                 GameState.ChooseRandomFirst();
             }
+            else
+            {
+                // remember the host's pick so later rounds alternate from it
+                GameState.StartingTeam = SelectedFirst;
+            }
 
             Navigation.NavigateTo("/game");
         }
