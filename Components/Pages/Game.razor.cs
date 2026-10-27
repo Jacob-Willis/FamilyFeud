@@ -30,6 +30,41 @@ namespace FamilyFeud.Components.Pages
         // Whether a play/pass choice modal should be shown and block other UI
         private bool IsChoiceModalOpen => GameState.PlayoffAwaitingChoice && GameState.WhichTeamsTurn != SelectedTeam.Random;
 
+        // Footer actions that ask for confirmation while a round is in progress (#13)
+        private enum ConfirmAction { None, LoadQuestion, RevealAll }
+
+        // The action waiting for the host to confirm; None means the confirmation modal is closed
+        private ConfirmAction PendingConfirm { get; set; } = ConfirmAction.None;
+
+        // Strike only makes sense during a live round with no modal open
+        private bool CanStrike => CurrentQuestion != null
+            && !IsChoiceModalOpen
+            && PendingConfirm == ConfirmAction.None
+            && !GameState.IsRoundFinished
+            && !GameState.IsGameOver;
+
+        // A round is in progress once a question is loaded, the round isn't finished, some answers are still
+        // hidden, and at least one answer has been revealed or a strike given (or play has moved past the face-off)
+        private bool IsRoundInProgress
+        {
+            get
+            {
+                if (CurrentQuestion == null || GameState.IsRoundFinished) return false;
+
+                bool anyRevealed = CurrentQuestion.Answers.Any(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
+                bool allRevealed = CurrentQuestion.Answers.All(a => GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id));
+                if (allRevealed) return false;
+
+                bool anyStrike = GameState.Team1.IncorrectStrikes > 0
+                    || GameState.Team2.IncorrectStrikes > 0
+                    || GameState.Team1.FirstAnswer != null
+                    || GameState.Team2.FirstAnswer != null
+                    || GameState.mode != GameMode.PlayOff;
+
+                return anyRevealed || anyStrike;
+            }
+        }
+
 
 
         // Exposed for UI so button text can reflect open/closed state
@@ -115,6 +150,47 @@ namespace FamilyFeud.Components.Pages
 
             StateHasChanged();
         }
+
+        // Load Question button: ask first if this would abandon a round in progress
+        private async Task RequestLoadQuestion()
+        {
+            if (IsChoiceModalOpen || GameState.IsGameOver) return;
+            if (IsRoundInProgress)
+            {
+                PendingConfirm = ConfirmAction.LoadQuestion;
+                return;
+            }
+            await LoadQuestion();
+        }
+
+        // Reveal All Answers button: ask first if this would spoil a round in progress
+        private void RequestRevealAll()
+        {
+            if (IsChoiceModalOpen || CurrentQuestion == null) return;
+            if (IsRoundInProgress)
+            {
+                PendingConfirm = ConfirmAction.RevealAll;
+                return;
+            }
+            GameState.RevealAllAnswers(CurrentQuestion.Id);
+        }
+
+        private async Task ConfirmPendingAction()
+        {
+            ConfirmAction action = PendingConfirm;
+            PendingConfirm = ConfirmAction.None;
+
+            if (action == ConfirmAction.LoadQuestion)
+            {
+                await LoadQuestion();
+            }
+            else if (action == ConfirmAction.RevealAll && CurrentQuestion != null)
+            {
+                GameState.RevealAllAnswers(CurrentQuestion.Id);
+            }
+        }
+
+        private void CancelPendingAction() => PendingConfirm = ConfirmAction.None;
 
         private void RevealAnswer(Answer a)
         {
