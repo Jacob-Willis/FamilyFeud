@@ -62,7 +62,7 @@ query GetQuestion($id: Int!) {
             if (question == null) throw new ArgumentNullException(nameof(question));
 
             string mutation = @"
-mutation InsertQuestion($question: String!, $category: String, $answers: [answers_insert_input!]!) {
+mutation InsertQuestion($question: String!, $category: String!,$answers: [answers_insert_input!]!) {
   insert_questions_one(object: { question: $question, category: $category, answers: { data: $answers } }) {
     id
   }
@@ -76,7 +76,7 @@ mutation InsertQuestion($question: String!, $category: String, $answers: [answer
             var variables = new
             {
                 question = question.QuestionText,
-                category = question.Category,
+                category = NormalizeCategory(question.Category),
                 answers = answersInput
             };
 
@@ -85,19 +85,26 @@ mutation InsertQuestion($question: String!, $category: String, $answers: [answer
             return res?.InsertQuestionsOne?.Id ?? 0;
         }
 
-        public async Task UpdateQuestionAsync(Question question)
+        public async Task<bool> UpdateQuestionAsync(Question question)
         {
             if (question == null) throw new ArgumentNullException(nameof(question));
 
             // Every value goes in as a GraphQL variable, so answer text never needs escaping.
             // Hasura runs all root fields of one mutation in a single transaction, in order:
-            // 1. delete answers the host removed, 2. update the existing ones,
-            // 3. update the question and insert the new answers.
+            // 1. update the question text and category (null if the question no longer exists),
+            // 2. delete answers the host removed, 3. update the existing ones,
+            // 4. insert the new answers, 5-6. undo step 4 if the question was gone (#37).
             // The app_full_access role can't set answers.question_id, so new answers go in as a
             // nested insert under the question (Hasura fills in question_id). That needs an upsert
-            // on questions_pkey, which also updates the question text and category.
+            // on questions_pkey, which would recreate a question deleted elsewhere. So the insert
+            // half of the upsert writes a one-off marker as the question text (the update half only
+            // touches category, so it never writes the marker), and steps 5-6 delete any row that
+            // still has the marker. A deleted question therefore stays deleted, all in one transaction.
             string mutation = @"
-mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $existingAnswerIds: [Int!]!, $answerUpdates: [answers_updates!]!, $newAnswers: [answers_insert_input!]!) {
+mutation UpdateQuestion($id: Int!, $question: String!, $category: String!, $missingMarker: String!, $existingAnswerIds: [Int!]!, $answerUpdates: [answers_updates!]!, $newAnswers: [answers_insert_input!]!) {
+  update_questions_by_pk(pk_columns: { id: $id }, _set: { question: $question, category: $category }) {
+    id
+  }
   delete_answers(where: { question_id: { _eq: $id }, id: { _nin: $existingAnswerIds } }) {
     affected_rows
   }
@@ -105,10 +112,16 @@ mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $exist
     affected_rows
   }
   insert_questions_one(
-    object: { id: $id, question: $question, category: $category, answers: { data: $newAnswers } },
-    on_conflict: { constraint: questions_pkey, update_columns: [question, category] }
+    object: { id: $id, question: $missingMarker, category: $category, answers: { data: $newAnswers } },
+    on_conflict: { constraint: questions_pkey, update_columns: [category] }
   ) {
     id
+  }
+  undo_answers: delete_answers(where: { question_id: { _eq: $id }, question: { question: { _eq: $missingMarker } } }) {
+    affected_rows
+  }
+  undo_question: delete_questions(where: { id: { _eq: $id }, question: { _eq: $missingMarker } }) {
+    affected_rows
   }
 }";
             // Answers with an id already exist and are updated; answers without one are inserted.
@@ -119,7 +132,9 @@ mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $exist
             {
                 id = question.Id,
                 question = question.QuestionText,
-                category = question.Category,
+                category = NormalizeCategory(question.Category),
+                // Unique per call, so it can never match a real question's text.
+                missingMarker = $"__ff_missing_question_{Guid.NewGuid():N}",
                 existingAnswerIds = existingAnswers.Select(a => a.Id).ToList(),
                 answerUpdates = existingAnswers.Select(a => new
                 {
@@ -136,7 +151,9 @@ mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $exist
             };
 
             GraphQLRequest req = new GraphQLRequest { Query = mutation, Variables = variables };
-            await SendRequestAsync<GenericMutationResponse>(req).ConfigureAwait(false);
+            UpdateQuestionResponse? res = await SendRequestAsync<UpdateQuestionResponse>(req).ConfigureAwait(false);
+            // Null means no question had this id (e.g. it was deleted elsewhere); nothing was saved.
+            return res?.UpdateQuestionsByPk != null;
         }
 
         public async Task<bool> DeleteQuestionAsync(int id)
@@ -156,6 +173,15 @@ mutation DeleteQuestion($id: Int!) {
             DeleteQuestionResponse? res = await SendRequestAsync<DeleteQuestionResponse>(req).ConfigureAwait(false);
             // Null means no question had this id (e.g. it was already deleted).
             return res?.DeleteQuestionsByPk != null;
+        }
+
+        /// <summary>
+        /// questions.category is NOT NULL and a blank category means "no category" (#29),
+        /// so null or whitespace becomes "" and anything else is trimmed.
+        /// </summary>
+        private static string NormalizeCategory(string? category)
+        {
+            return category?.Trim() ?? string.Empty;
         }
 
         // Longest GraphQL error text passed on to the UI; the full text always goes to the debug output (#33)
@@ -264,6 +290,16 @@ mutation DeleteQuestion($id: Int!) {
             }
         }
 
-        private class GenericMutationResponse { }
+        private class UpdateQuestionResponse
+        {
+            [JsonPropertyName("update_questions_by_pk")]
+            public UpdatedQuestion? UpdateQuestionsByPk { get; set; }
+
+            public class UpdatedQuestion
+            {
+                [JsonPropertyName("id")]
+                public int Id { get; set; }
+            }
+        }
     }
 }
