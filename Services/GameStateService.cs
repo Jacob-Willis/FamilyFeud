@@ -365,6 +365,45 @@ namespace FamilyFeud.Services
             }
         }
 
+        // Why the game ended (set by EndRound with IsGameOver); None while the game is running
+        public GameEndReason EndReason { get; private set; } = GameEndReason.None;
+
+        // Winning screen headline: "<name> wins!" or "It's a tie!" (empty while the game is running)
+        public string WinnerHeadline
+        {
+            get
+            {
+                if (!IsGameOver) return string.Empty;
+                return Winner switch
+                {
+                    SelectedTeam.Team1 => $"{Team1.Name} wins!",
+                    SelectedTeam.Team2 => $"{Team2.Name} wins!",
+                    _ => "It's a tie!"
+                };
+            }
+        }
+
+        // Winning screen subtitle saying how the game ended, e.g. "After 5 rounds" or "Red reached 300 points"
+        public string GameOverReasonText
+        {
+            get
+            {
+                string rounds = RoundsPlayed == 1 ? "1 round" : $"{RoundsPlayed} rounds";
+                return EndReason switch
+                {
+                    GameEndReason.RoundsPlayed => $"After {rounds}",
+                    GameEndReason.TargetScore => Winner switch
+                    {
+                        SelectedTeam.Team1 => $"{Team1.Name} reached {TargetScore} points after {rounds}",
+                        SelectedTeam.Team2 => $"{Team2.Name} reached {TargetScore} points after {rounds}",
+                        _ => $"Reached {TargetScore} points after {rounds}"
+                    },
+                    GameEndReason.OutOfQuestions => $"Out of questions after {rounds}",
+                    _ => string.Empty
+                };
+            }
+        }
+
         // Called by the start screen. Rounds must be one of RoundOptions and the target score must be positive.
         public void SetGameLength(GameLengthMode lengthMode, int totalRounds, int targetScore)
         {
@@ -447,6 +486,7 @@ namespace FamilyFeud.Services
             TargetScore = DefaultTargetScore;
             RoundsPlayed = 0;
             IsGameOver = false;
+            EndReason = GameEndReason.None;
             _askedQuestionIds.Clear();
             NotifyStateChanged();
         }
@@ -486,7 +526,11 @@ namespace FamilyFeud.Services
             RoundPool = 0;
             IsRoundFinished = true;
             RoundsPlayed++;
-            IsGameOver = IsGameLengthReached() || NoQuestionsLeft();
+            if (IsGameLengthReached())
+                EndReason = GameLength == GameLengthMode.Rounds ? GameEndReason.RoundsPlayed : GameEndReason.TargetScore;
+            else if (NoQuestionsLeft())
+                EndReason = GameEndReason.OutOfQuestions;
+            IsGameOver = EndReason != GameEndReason.None;
             NotifyStateChanged();
         }
 
@@ -552,6 +596,14 @@ namespace FamilyFeud.Services
     {
         Rounds,
         TargetScore
+    }
+
+    public enum GameEndReason
+    {
+        None,
+        RoundsPlayed,
+        TargetScore,
+        OutOfQuestions
     }
 
     public enum GameMode
