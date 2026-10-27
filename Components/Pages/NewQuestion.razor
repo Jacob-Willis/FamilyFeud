@@ -50,7 +50,7 @@
                 <label for="category" class="form-label ff-form-label">Category</label>
                 <input type="text" class="form-control ff-form-input" id="category" list="categoryList" placeholder="Select or type a category" @bind="_category" />
                 <datalist id="categoryList">
-                    @foreach (var cat in _categories)
+                    @foreach (string cat in _categories)
                     {
                         <option value="@cat" />
                     }

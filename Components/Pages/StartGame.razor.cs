@@ -3,14 +3,13 @@ using Microsoft.AspNetCore.Components;
 
 namespace FamilyFeud.Components.Pages
 {
-    public partial class StartGame
-    : IDisposable
+    public partial class StartGame : IDisposable
     {
         [Inject]
         private NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
+        private GameStateService GameState { get; set; } = null!;
 
         private const int MaxTargetScore = 10000;
 
@@ -29,7 +28,6 @@ namespace FamilyFeud.Components.Pages
             string.IsNullOrWhiteSpace(GameState.Team1.Name) ||
             string.IsNullOrWhiteSpace(GameState.Team2.Name) ||
             !IsTargetScoreValid;
-
 
         private void GoBack()
         {
@@ -66,7 +64,7 @@ namespace FamilyFeud.Components.Pages
         }
 
         // Which team goes first: SelectedTeam.Team1, SelectedTeam.Team2, or SelectedTeam.Random
-        private FamilyFeud.Services.SelectedTeam SelectedFirst
+        private SelectedTeam SelectedFirst
         {
             get => GameState.WhichTeamsTurn;
             set { GameState.SwitchTeam(value); }
@@ -85,7 +83,7 @@ namespace FamilyFeud.Components.Pages
             int targetScore = LengthMode == GameLengthMode.TargetScore && TargetScore is int target ? target : GameStateService.DefaultTargetScore;
             GameState.SetGameLength(LengthMode, TotalRounds, targetScore);
 
-            if (SelectedFirst == FamilyFeud.Services.SelectedTeam.Random)
+            if (SelectedFirst == SelectedTeam.Random)
             {
                 // Random (the default): pick the starting team at random
                 GameState.ChooseRandomFirst();

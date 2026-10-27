@@ -1,5 +1,6 @@
 @page "/game"
 @using FamilyFeud.Services
+@using FamilyFeud.Services.Hasura
 
 <div class="ff-page-header">
     <button class="ff-back-button" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
@@ -63,8 +64,8 @@
         <h3 class="ff-muted">Teams</h3>
         <div class="d-flex gap-5">
             <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
-                    <strong>@GameState.Team1.Name</strong>
-                    <div>Score: @GameState.Team1.Score</div>
+                <strong>@GameState.Team1.Name</strong>
+                <div>Score: @GameState.Team1.Score</div>
             </div>
             <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
                 <strong>@GameState.Team2.Name</strong>
@@ -81,7 +82,7 @@
             <p class="ff-muted-small">@CurrentQuestion.QuestionText</p>
         </div>
     }
-    @if (GameState.mode == GameMode.PointSteal)
+    @if (GameState.Mode == GameMode.PointSteal)
     {
         <div class="ff-muted-small">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
     }
@@ -111,7 +112,7 @@
     <div class="ff-container ff-container-border">
         <p class="ff-muted">Answers</p>
         <div class="ff-answer-box">
-            @foreach (var a in CurrentQuestion.Answers)
+            @foreach (Answer a in CurrentQuestion.Answers)
             {
                 bool isRevealed = GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id);
                 <button @key="@(CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item @(isRevealed ? "revealed" : "")" disabled="@(IsChoiceModalOpen || GameState.IsRoundFinished || isRevealed)" title="@(isRevealed ? "Already revealed" : null)" @onclick="() => { if (!IsChoiceModalOpen && !GameState.IsRoundFinished && !isRevealed) RevealAnswer(a); }">
@@ -135,7 +136,7 @@
         </div>
         <div class="me-auto">
             <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
-                @foreach (var c in Categories)
+                @foreach (string c in Categories)
                 {
                     <option value="@c">@c</option>
                 }

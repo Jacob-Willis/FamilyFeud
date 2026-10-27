@@ -1,6 +1,7 @@
 using FamilyFeud.Services;
 using FamilyFeud.Services.Hasura;
 using Microsoft.AspNetCore.Components;
+using System.Diagnostics;
 
 namespace FamilyFeud.Components.Pages
 {
@@ -10,7 +11,7 @@ namespace FamilyFeud.Components.Pages
         private NavigationManager Navigation { get; set; } = null!;
 
         [Inject]
-        private FamilyFeud.Services.GameStateService GameState { get; set; } = null!;
+        private GameStateService GameState { get; set; } = null!;
 
         // Questions not yet asked this game; asked ones are removed so they aren't repeated
         private List<Question> RemainingQuestions { get; set; } = new List<Question>();
@@ -62,13 +63,11 @@ namespace FamilyFeud.Components.Pages
                     || GameState.Team2.IncorrectStrikes > 0
                     || GameState.Team1.FirstAnswer != null
                     || GameState.Team2.FirstAnswer != null
-                    || GameState.mode != GameMode.PlayOff;
+                    || GameState.Mode != GameMode.PlayOff;
 
                 return anyRevealed || anyStrike;
             }
         }
-
-
 
         // Exposed for UI so button text can reflect open/closed state
         private bool IsAudienceOpen => _audienceWindow != null;
@@ -263,7 +262,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"OpenGameWindow error: {ex}");
+                Debug.WriteLine($"OpenGameWindow error: {ex}");
             }
         }
 

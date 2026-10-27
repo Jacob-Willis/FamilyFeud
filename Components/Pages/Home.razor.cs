@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Components;
+using System.Diagnostics;
+using System.Reflection;
 using System.Xml.Linq;
 
 namespace FamilyFeud.Components.Pages
@@ -21,19 +23,19 @@ namespace FamilyFeud.Components.Pages
 
         private Color GetRandomColour()
         {
-            var random = new Random();
+            Random random = new Random();
             return Colours[random.Next(Colours.Count)];
         }
 
         private string GetRandomAdjective()
         {
-            var random = new Random();
+            Random random = new Random();
             return Adjectives[random.Next(Adjectives.Count)];
         }
 
         private void RandomiseAdjective()
         {
-            var random = new Random();
+            Random random = new Random();
             string a = Adjectives[random.Next(Adjectives.Count)];
             Color c = Colours[random.Next(Colours.Count)];
             CurrentAdjective = a;
@@ -44,15 +46,15 @@ namespace FamilyFeud.Components.Pages
         {
             try
             {
-                var assembly = typeof(Home).Assembly;
-                using (var stream = assembly.GetManifestResourceStream("FamilyFeud.Resources.adjectives.xml"))
+                Assembly assembly = typeof(Home).Assembly;
+                using (Stream? stream = assembly.GetManifestResourceStream("FamilyFeud.Resources.adjectives.xml"))
                 {
                     if (stream != null)
                     {
-                        using (var reader = new StreamReader(stream))
+                        using (StreamReader reader = new StreamReader(stream))
                         {
                             string xmlContent = await reader.ReadToEndAsync();
-                            var doc = XDocument.Parse(xmlContent);
+                            XDocument doc = XDocument.Parse(xmlContent);
 
                             Adjectives = doc.Descendants("adjective")
                                 .Select(x => x.Value)
@@ -72,7 +74,7 @@ namespace FamilyFeud.Components.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error loading XML: {ex.Message}");
+                Debug.WriteLine($"Error loading XML: {ex.Message}");
             }
         }
 
