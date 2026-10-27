@@ -214,7 +214,18 @@ namespace FamilyFeud.Components.Pages
                 {
                     // Update existing question
                     question.Id = QuestionId.Value;
-                    await HasuraService.UpdateQuestionAsync(question);
+                    bool updated = await HasuraService.UpdateQuestionAsync(question);
+
+                    if (!updated)
+                    {
+                        // Deleted elsewhere after this page loaded (#37). Nothing was saved or recreated,
+                        // so drop it from the shared cache like the delete flow does and hide Delete.
+                        GameState.Questions.RemoveAll(q => q.Id == QuestionId.Value);
+                        _questionLoaded = false;
+                        _message = "This question has been deleted.";
+                        _isSuccess = false;
+                        return;
+                    }
 
                     // Update local state only if the game has already loaded questions;
                     // otherwise the Game page loads everything from Hasura later.
