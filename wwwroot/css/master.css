@@ -291,6 +291,83 @@
     max-width: 90%;
 }
 
+/* Delete confirmation modal (#17), shared by the Questions and NewQuestion pages (#34).
+   Kept after .ff-modal so its max-width wins. */
+.ff-delete-modal {
+    color: #222222;
+    max-width: 480px;
+    word-break: break-word;
+}
+
+.ff-modal-button {
+    padding: 0.45rem 1.1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.ff-modal-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ff-modal-button-cancel {
+    background: #e9ecef;
+    border-color: #ced4da;
+    color: #222222;
+}
+
+.ff-modal-button-danger {
+    background: #dc3545;
+    color: #ffffff;
+}
+
+.ff-modal-button-danger:hover:not(:disabled) {
+    background: #bb2d3b;
+}
+
+/* Secondary/danger buttons on the Questions and NewQuestion pages (#17, #34).
+   Pages add their own padding/size; .ff-button-sm must stay after these so its padding wins. */
+.ff-button-secondary,
+.ff-button-danger {
+    color: ButtonHighlight;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.ff-button-danger {
+    border-color: rgba(220, 53, 69, 0.7);
+}
+
+.ff-button-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.ff-button-danger:hover:not(:disabled) {
+    background: rgba(220, 53, 69, 0.45);
+    border-color: rgba(220, 53, 69, 0.9);
+    transform: translateY(-1px);
+}
+
+.ff-button-secondary:disabled,
+.ff-button-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ff-button-sm {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.875rem;
+}
+
 /* When modal is shown we slightly dim the rest of the page via backdrop and pointer-events disabled by overlay; answers and footer are visually underneath */
 .ff-modal-backdrop ~ * {
     pointer-events: none;
