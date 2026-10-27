@@ -41,10 +41,21 @@ namespace FamilyFeud.Components.Pages
         // The action waiting for the host to confirm; None means the confirmation modal is closed
         private ConfirmAction PendingConfirm { get; set; } = ConfirmAction.None;
 
+        // The question the host picked in the "Choose question..." modal, kept while the confirmation modal asks
+        // whether to abandon the round in progress; null means Load Question picks at random (#38)
+        private Question? _chosenQuestion;
+
+        // Whether the host-only "Choose question..." modal is open (#38). The audience window never shows it.
+        private bool IsPickerOpen { get; set; }
+
+        // Text typed into the picker's search box; filters the listed questions by their text
+        private string PickerSearch { get; set; } = string.Empty;
+
         // Strike only makes sense during a live round with no modal open
         private bool CanStrike => CurrentQuestion != null
             && !IsChoiceModalOpen
             && PendingConfirm == ConfirmAction.None
+            && !IsPickerOpen
             && !GameState.IsRoundFinished
             && !GameState.IsGameOver;
 
@@ -121,7 +132,9 @@ namespace FamilyFeud.Components.Pages
             ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
             : $"First to {GameState.TargetScore} points (round {GameState.CurrentRoundNumber})";
 
-        private async Task LoadQuestion()
+        // Load the next question. With no chosen question one is picked at random from the selected category;
+        // the "Choose question..." modal passes the host's pick instead (#38). Both go through the same checks.
+        private async Task LoadQuestion(Question? chosen = null)
         {
             // no new rounds once the game is over
             if (GameState.IsGameOver) return;
@@ -146,18 +159,34 @@ namespace FamilyFeud.Components.Pages
                 return;
             }
 
-            // Filter by selected category if applicable
-            List<Question> pool = QuestionsInSelectedCategory();
-
-            if (pool.Count == 0)
+            Question next;
+            if (chosen != null)
             {
-                // No questions left in the selected category; fall back to any remaining question (#14)
-                InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
-                pool = RemainingQuestions;
+                // the host's pick must still be unasked (and not deleted meanwhile), so it is never repeated (#38)
+                Question? stillRemaining = RemainingQuestions.FirstOrDefault(q => q.Id == chosen.Id);
+                if (stillRemaining == null)
+                {
+                    InfoMessage = "That question is no longer available";
+                    StateHasChanged();
+                    return;
+                }
+                next = stillRemaining;
             }
+            else
+            {
+                // Filter by selected category if applicable
+                List<Question> pool = QuestionsInSelectedCategory();
 
-            Random rand = new Random();
-            Question next = pool[rand.Next(0, pool.Count)];
+                if (pool.Count == 0)
+                {
+                    // No questions left in the selected category; fall back to any remaining question (#14)
+                    InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
+                    pool = RemainingQuestions;
+                }
+
+                Random rand = new Random();
+                next = pool[rand.Next(0, pool.Count)];
+            }
 
             // Update shared game state so the audience window displays the same question. This also marks it
             // as asked, which takes it out of RemainingQuestions so it won't be repeated.
@@ -193,9 +222,11 @@ namespace FamilyFeud.Components.Pages
             StateHasChanged();
         }
 
-        // Load Question button: ask first if this would abandon a round in progress
-        private async Task RequestLoadQuestion()
+        // Load Question button (random), or a question picked in the "Choose question..." modal (#38): ask first
+        // if this would abandon a round in progress
+        private async Task RequestLoadQuestion(Question? chosen = null)
         {
+            _chosenQuestion = null;
             if (IsChoiceModalOpen || GameState.IsGameOver || GameState.IsLoading) return;
             // nothing to load: say so straight away instead of asking to abandon the round first (#28)
             if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
@@ -205,10 +236,45 @@ namespace FamilyFeud.Components.Pages
             }
             if (IsRoundInProgress)
             {
+                _chosenQuestion = chosen;
                 PendingConfirm = ConfirmAction.LoadQuestion;
                 return;
             }
-            await LoadQuestion();
+            await LoadQuestion(chosen);
+        }
+
+        // Questions listed in the picker: the remaining (never already asked) questions in the selected category,
+        // narrowed by the search box (#38)
+        private List<Question> PickerQuestions()
+        {
+            List<Question> list = QuestionsInSelectedCategory();
+            string search = PickerSearch.Trim();
+            if (search.Length == 0) return list;
+            return list
+                .Where(q => q.QuestionText.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        // "Choose question..." button: same guards as Load Question, then show the host-only picker (#38)
+        private void OpenQuestionPicker()
+        {
+            if (IsChoiceModalOpen || PendingConfirm != ConfirmAction.None || GameState.IsGameOver || GameState.IsLoading) return;
+            if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
+            {
+                InfoMessage = "No questions left";
+                return;
+            }
+            PickerSearch = string.Empty;
+            IsPickerOpen = true;
+        }
+
+        private void CloseQuestionPicker() => IsPickerOpen = false;
+
+        // A question was clicked in the picker: load it exactly like Load Question would, confirmation included
+        private async Task PickQuestion(Question q)
+        {
+            IsPickerOpen = false;
+            await RequestLoadQuestion(q);
         }
 
         // Reveal All Answers button: ask first if this would spoil a round in progress
@@ -226,11 +292,13 @@ namespace FamilyFeud.Components.Pages
         private async Task ConfirmPendingAction()
         {
             ConfirmAction action = PendingConfirm;
+            Question? chosen = _chosenQuestion;
             PendingConfirm = ConfirmAction.None;
+            _chosenQuestion = null;
 
             if (action == ConfirmAction.LoadQuestion)
             {
-                await LoadQuestion();
+                await LoadQuestion(chosen);
             }
             else if (action == ConfirmAction.RevealAll && CurrentQuestion != null)
             {
@@ -238,7 +306,11 @@ namespace FamilyFeud.Components.Pages
             }
         }
 
-        private void CancelPendingAction() => PendingConfirm = ConfirmAction.None;
+        private void CancelPendingAction()
+        {
+            PendingConfirm = ConfirmAction.None;
+            _chosenQuestion = null;
+        }
 
         private void RevealAnswer(Answer a)
         {

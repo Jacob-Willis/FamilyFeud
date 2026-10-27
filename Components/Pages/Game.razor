@@ -38,6 +38,44 @@
     </div>
 }
 
+@* Host-only question picker (#38): lists the remaining questions in the selected category. The audience window
+   mounts Audience.razor, not this page, so it never sees this list. *@
+@if (IsPickerOpen)
+{
+    List<Question> picks = PickerQuestions();
+    <div class="ff-modal-backdrop">
+        <div class="ff-modal ff-picker">
+            <h4>Choose question</h4>
+            <p class="mb-2">Remaining questions in @(SelectedCategory == "All" ? "all categories" : SelectedCategory): @QuestionsInSelectedCategory().Count</p>
+            <input class="form-control mb-2" type="search" placeholder="Search questions" aria-label="Search questions" @bind="PickerSearch" @bind:event="oninput" />
+            @if (picks.Count == 0)
+            {
+                <p class="ff-picker-empty mb-2">@(QuestionsInSelectedCategory().Count == 0
+                    ? $"No questions left in {SelectedCategory} — choose another category or use Load Question."
+                    : "No questions match your search.")</p>
+            }
+            else
+            {
+                <div class="ff-picker-list list-group mb-2">
+                    @foreach (Question q in picks)
+                    {
+                        <button @key="q.Id" type="button" class="list-group-item list-group-item-action" @onclick="() => PickQuestion(q)">
+                            <span>@q.QuestionText</span>
+                            @if (SelectedCategory == "All" && !string.IsNullOrWhiteSpace(q.Category))
+                            {
+                                <span class="badge text-bg-secondary ms-2">@q.Category</span>
+                            }
+                        </button>
+                    }
+                </div>
+            }
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary" @onclick="CloseQuestionPicker">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
 @* Winning screen (#8): shown above the board once the game is over; the last round's answers stay visible below *@
 @if (GameState.IsGameOver)
 {
@@ -150,7 +188,8 @@
                 }
             </select>
         </div>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="RequestLoadQuestion">Load Question</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="() => RequestLoadQuestion()">Load Question</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading || NoQuestionsFound || HasLoadError)" title="Pick the next question from the remaining questions in the selected category" @onclick="OpenQuestionPicker">Choose question…</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
         <button class="btn ff-button" @onclick="RequestRevealAll">Reveal All Answers</button>
         <button class="btn ff-button" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
