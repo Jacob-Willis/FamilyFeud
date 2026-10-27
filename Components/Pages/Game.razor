@@ -89,6 +89,21 @@
     {
         <div class="alert alert-info py-2 mb-0" role="status">@InfoMessage</div>
     }
+    @* Loading questions from Hasura failed: show why and let the host try again (#15) *@
+    @if (GameState.IsLoading)
+    {
+        <div class="d-flex align-items-center gap-2 ff-muted-small" role="status">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            <span>Loading questions...</span>
+        </div>
+    }
+    else if (HasLoadError)
+    {
+        <div class="alert alert-danger py-2 mb-0 d-flex align-items-center gap-3" role="alert">
+            <span class="me-auto">Couldn't load the questions: @GameState.ErrorMessage</span>
+            <button class="btn btn-sm btn-outline-danger" @onclick="RetryLoadQuestions">Retry</button>
+        </div>
+    }
 </div>
 
 @if (CurrentQuestion != null)
@@ -126,7 +141,7 @@
                 }
             </select>
         </div>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver)" @onclick="RequestLoadQuestion">Load Question</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="RequestLoadQuestion">Load Question</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
         <button class="btn ff-button" @onclick="RequestRevealAll">Reveal All Answers</button>
         <button class="btn ff-button" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>

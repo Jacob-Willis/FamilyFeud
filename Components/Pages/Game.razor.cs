@@ -120,9 +120,9 @@ namespace FamilyFeud.Components.Pages
             // remaining pool from the cache mid-game, because that would repeat questions already asked (#28).
             if ((GameState.Questions == null || GameState.Questions.Count == 0) && RemainingQuestions.Count == 0)
             {
-                await GameState.LoadQuestionsAsync();
-                RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
-                BuildCategories();
+                await ReloadQuestionsAsync();
+                // the load failed: the error alert with its Retry button says so, no need for "No questions left" (#15)
+                if (HasLoadError) return;
             }
 
             if (RemainingQuestions.Count == 0)
@@ -158,10 +158,32 @@ namespace FamilyFeud.Components.Pages
             StateHasChanged();
         }
 
+        // Loading questions from Hasura failed; the message comes from the shared game state (#15)
+        private bool HasLoadError => !GameState.IsLoading && !string.IsNullOrEmpty(GameState.ErrorMessage);
+
+        // Fetch the questions from Hasura and rebuild the remaining pool and categories from them
+        private async Task ReloadQuestionsAsync()
+        {
+            await GameState.LoadQuestionsAsync();
+            RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
+            BuildCategories();
+        }
+
+        // Retry button on the load error alert (#15). Like Load Question, only load from Hasura if nothing was
+        // ever loaded, so a retry can never refill the pool with questions already asked (#28).
+        private async Task RetryLoadQuestions()
+        {
+            if (GameState.IsLoading) return;
+            if (GameState.Questions != null && GameState.Questions.Count > 0) return;
+            InfoMessage = null;
+            await ReloadQuestionsAsync();
+            StateHasChanged();
+        }
+
         // Load Question button: ask first if this would abandon a round in progress
         private async Task RequestLoadQuestion()
         {
-            if (IsChoiceModalOpen || GameState.IsGameOver) return;
+            if (IsChoiceModalOpen || GameState.IsGameOver || GameState.IsLoading) return;
             // nothing to load: say so straight away instead of asking to abandon the round first (#28)
             if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
             {
