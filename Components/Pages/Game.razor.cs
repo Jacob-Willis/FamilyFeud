@@ -15,8 +15,11 @@ namespace FamilyFeud.Components.Pages
         // Local copy of remaining questions so we can remove asked questions
         private List<Question> RemainingQuestions { get; set; } = new List<Question>();
 
-        // Current question shown in UI
-        private Question? CurrentQuestion { get; set; }
+        // Current question shown in UI; read from the shared state so the host and audience views always match (#14)
+        private Question? CurrentQuestion => GameState.CurrentQuestion;
+
+        // Short info message for the host, e.g. when the selected category has run out of questions (#14, #28)
+        private string? InfoMessage { get; set; }
 
         // Categories for optional filtering (includes "All")
         private List<string> Categories { get; set; } = new List<string>();
@@ -111,42 +114,46 @@ namespace FamilyFeud.Components.Pages
         {
             // no new rounds once the game is over
             if (GameState.IsGameOver) return;
+            InfoMessage = null;
 
-            // Refill remaining if exhausted
-            if (RemainingQuestions == null || RemainingQuestions.Count == 0)
+            // Only load from Hasura if nothing was ever loaded (e.g. the first load failed). Never refill the
+            // remaining pool from the cache mid-game, because that would repeat questions already asked (#28).
+            if ((GameState.Questions == null || GameState.Questions.Count == 0) && RemainingQuestions.Count == 0)
             {
-                if (GameState.Questions == null || GameState.Questions.Count == 0)
-                {
-                    await GameState.LoadQuestionsAsync();
-                }
-
+                await GameState.LoadQuestionsAsync();
                 RemainingQuestions = new List<Question>(GameState.Questions ?? new List<Question>());
                 BuildCategories();
             }
 
-            // Filter by selected category if applicable
-            List<Question> pool = string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "All"
-                ? RemainingQuestions
-                : RemainingQuestions.Where(q => string.Equals(q.Category ?? string.Empty, SelectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
-
-            if (pool == null || pool.Count == 0)
+            if (RemainingQuestions.Count == 0)
             {
-                // No questions in selected category; fallback to any remaining
-                pool = RemainingQuestions;
-
-                CurrentQuestion = null;
+                // keep the current question (host and audience stay in sync)
+                InfoMessage = "No questions left";
+                StateHasChanged();
                 return;
             }
 
-            Random rand = new Random();
-            int idx = rand.Next(0, pool.Count);
-            CurrentQuestion = pool[idx];
+            // Filter by selected category if applicable
+            bool filtered = !string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "All";
+            List<Question> pool = filtered
+                ? RemainingQuestions.Where(q => string.Equals(q.Category ?? string.Empty, SelectedCategory, StringComparison.OrdinalIgnoreCase)).ToList()
+                : RemainingQuestions;
 
-            // Update shared game state so audience window can display the same question
-            GameState.SetCurrentQuestion(CurrentQuestion);
+            if (pool.Count == 0)
+            {
+                // No questions left in the selected category; fall back to any remaining question (#14)
+                InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
+                pool = RemainingQuestions;
+            }
+
+            Random rand = new Random();
+            Question next = pool[rand.Next(0, pool.Count)];
+
+            // Update shared game state so the audience window displays the same question
+            GameState.SetCurrentQuestion(next);
 
             // Remove the asked question from remaining so it won't be repeated
-            RemainingQuestions.RemoveAll(q => q.Id == CurrentQuestion.Id);
+            RemainingQuestions.RemoveAll(q => q.Id == next.Id);
 
             StateHasChanged();
         }
@@ -155,6 +162,12 @@ namespace FamilyFeud.Components.Pages
         private async Task RequestLoadQuestion()
         {
             if (IsChoiceModalOpen || GameState.IsGameOver) return;
+            // nothing to load: say so straight away instead of asking to abandon the round first (#28)
+            if (RemainingQuestions.Count == 0 && GameState.Questions.Count > 0)
+            {
+                InfoMessage = "No questions left";
+                return;
+            }
             if (IsRoundInProgress)
             {
                 PendingConfirm = ConfirmAction.LoadQuestion;
