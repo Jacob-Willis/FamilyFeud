@@ -6,89 +6,91 @@
 </div>
 
 <div class="ff-container">
-    <div class="ff-teams-container">
-        <!-- Team 1 -->
-        <div class="ff-team-box ff-team1">
-            <input class="form-control mb-2 text-center" @bind="Team1Name" />
-            <div class="ff-team-color" aria-hidden="true"></div>
-        </div>
-
-        <!-- Team 2 -->
-        <div class="ff-team-box ff-team2">
-            <input class="form-control mb-2 text-center" @bind="Team2Name" />
-            <div class="ff-team-color" aria-hidden="true"></div>
-        </div>
-    </div>
-
-    <div class="ff-first-picker">
-        <p class="ff-muted">Who goes first?</p>
-
-        <InputRadioGroup TValue="SelectedTeam" @bind-Value="SelectedFirst">
-            <div>
-                <label class="ff-first-option">
-                    <InputRadio class="ff-radio-hidden"
-                                TValue="SelectedTeam"
-                                Value="@SelectedTeam.Team1" />
-                    <span class="ff-option-content">
-                        <span class="ff-option-icon">🏆</span>
-                        @Team1Name
-                    </span>
-                </label>
-
-                <label class="ff-first-option">
-                    <InputRadio class="ff-radio-hidden"
-                                TValue="SelectedTeam"
-                                Value="@SelectedTeam.Random" />
-                    <span class="ff-option-content">
-                        <span class="ff-option-icon">🎲</span>
-                        Random
-                    </span>
-                </label>
-
-                <label class="ff-first-option">
-                    <InputRadio class="ff-radio-hidden"
-                                TValue="SelectedTeam"
-                                Value="@SelectedTeam.Team2" />
-                    <span class="ff-option-content">
-                        <span class="ff-option-icon">⚡</span>
-                        @Team2Name
-                    </span>
-                </label>
+    <div class="ff-start-layout">
+        <div class="ff-teams-container">
+            <!-- Team 1 -->
+            <div class="ff-team-box ff-team1">
+                <input class="form-control text-center" aria-label="Team 1 name" @bind="Team1Name" />
+                <div class="ff-team-color" aria-hidden="true"></div>
             </div>
-        </InputRadioGroup>
 
-        <p class="ff-muted mb-0">Game length (whichever is reached first)</p>
-        <div class="ff-length-picker">
-            <label class="ff-first-option">
-                <input type="checkbox" class="form-check-input ff-length-check" @bind="UseRounds" />
-                <span class="ff-option-content">Number of rounds</span>
-            </label>
-            <select class="form-select w-auto" aria-label="Number of rounds" @bind="TotalRounds"
-                    disabled="@(!UseRounds)">
-                @foreach (int option in GameStateService.RoundOptions)
-                {
-                    <option value="@option">@option</option>
-                }
-            </select>
+            <!-- Team 2 -->
+            <div class="ff-team-box ff-team2">
+                <input class="form-control text-center" aria-label="Team 2 name" @bind="Team2Name" />
+                <div class="ff-team-color" aria-hidden="true"></div>
+            </div>
         </div>
-        <div class="ff-length-picker">
-            <label class="ff-first-option">
-                <input type="checkbox" class="form-check-input ff-length-check" @bind="UseTargetScore" />
-                <span class="ff-option-content">Target score</span>
-            </label>
-            <input type="number" class="form-control w-auto" aria-label="Target score" min="1" max="@MaxTargetScore" step="50"
-                   @bind="TargetScore" disabled="@(!UseTargetScore)" />
-            <span class="ff-muted-small">points</span>
-        </div>
-        @if (!HasGameLength)
-        {
-            <p class="text-danger mb-0">Choose number of rounds, a target score, or both.</p>
-        }
-        @if (!IsTargetScoreValid)
-        {
-            <p class="text-danger mb-0">Target score must be a whole number from 1 to @MaxTargetScore.</p>
-        }
 
-        <button class="ff-start-game-button" @onclick="PlayGame" disabled="@VerifyStart">Start</button>
+        <div class="ff-start-panel ff-first-picker" role="radiogroup" aria-labelledby="ff-first-heading">
+            <p class="ff-muted ff-section-heading" id="ff-first-heading">Who goes first?</p>
+
+            <InputRadioGroup TValue="SelectedTeam" @bind-Value="SelectedFirst">
+                <div class="ff-first-options">
+                    <label class="ff-option ff-first-option">
+                        <InputRadio class="ff-radio-hidden"
+                                    TValue="SelectedTeam"
+                                    Value="@SelectedTeam.Team1" />
+                        <span class="ff-option-icon" aria-hidden="true">🏆</span>
+                        <span class="ff-option-text">@Team1Name</span>
+                    </label>
+
+                    <label class="ff-option ff-first-option">
+                        <InputRadio class="ff-radio-hidden"
+                                    TValue="SelectedTeam"
+                                    Value="@SelectedTeam.Random" />
+                        <span class="ff-option-icon" aria-hidden="true">🎲</span>
+                        <span class="ff-option-text">Random</span>
+                    </label>
+
+                    <label class="ff-option ff-first-option">
+                        <InputRadio class="ff-radio-hidden"
+                                    TValue="SelectedTeam"
+                                    Value="@SelectedTeam.Team2" />
+                        <span class="ff-option-icon" aria-hidden="true">⚡</span>
+                        <span class="ff-option-text">@Team2Name</span>
+                    </label>
+                </div>
+            </InputRadioGroup>
+        </div>
+
+        <div class="ff-start-panel ff-length-panel">
+            <p class="ff-muted ff-section-heading">Game length (whichever is reached first)</p>
+
+            <div class="ff-length-row">
+                <label class="ff-option ff-length-option">
+                    <input type="checkbox" class="form-check-input ff-length-check" @bind="UseRounds" />
+                    <span class="ff-option-text">Number of rounds</span>
+                </label>
+                <select class="form-select ff-length-input" aria-label="Number of rounds" @bind="TotalRounds"
+                        disabled="@(!UseRounds)">
+                    @foreach (int option in GameStateService.RoundOptions)
+                    {
+                        <option value="@option">@option</option>
+                    }
+                </select>
+                <span class="ff-muted-small ff-length-unit">rounds</span>
+            </div>
+            <div class="ff-length-row">
+                <label class="ff-option ff-length-option">
+                    <input type="checkbox" class="form-check-input ff-length-check" @bind="UseTargetScore" />
+                    <span class="ff-option-text">Target score</span>
+                </label>
+                <input type="number" class="form-control ff-length-input" aria-label="Target score" min="1" max="@MaxTargetScore" step="50"
+                       @bind="TargetScore" disabled="@(!UseTargetScore)" />
+                <span class="ff-muted-small ff-length-unit">points</span>
+            </div>
+            @if (!HasGameLength)
+            {
+                <p class="text-danger mb-0">Choose number of rounds, a target score, or both.</p>
+            }
+            @if (!IsTargetScoreValid)
+            {
+                <p class="text-danger mb-0">Target score must be a whole number from 1 to @MaxTargetScore.</p>
+            }
+
+            <div class="ff-start-footer">
+                <button class="ff-start-game-button" @onclick="PlayGame" disabled="@VerifyStart">Start</button>
+            </div>
+        </div>
     </div>
 </div>
