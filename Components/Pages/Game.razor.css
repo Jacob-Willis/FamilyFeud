@@ -50,27 +50,77 @@
     }
 }
 
+/* Footer category select (#52): the shared .ff-select with a minimum width */
+.ff-footer-select {
+    min-width: 200px;
+}
+
 /* Host-only question picker (#38): a wider .ff-modal with a scrolling list */
 .ff-picker {
     width: 640px;
 }
 
+/* The question list on the dark modal (#52): a bordered, scrolling box of full-width rows with hairline separators */
 .ff-picker-list {
     max-height: 50vh;
     overflow-y: auto;
+    color-scheme: dark;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.25);
 }
 
-.ff-picker-list .list-group-item {
+.ff-picker-item {
+    display: block;
+    width: 100%;
+    padding: 0.65rem 1rem;
+    font: inherit;
     text-align: left;
+    color: #ffffff;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
 }
 
-.ff-picker-empty {
-    color: #555;
+.ff-picker-item:last-child {
+    border-bottom: 0;
 }
 
-/* "N questions" count: dark text on the white modal (the shared .ff-muted-small is white) */
+.ff-picker-item:hover,
+.ff-picker-item:focus-visible {
+    background: rgba(255,255,255,0.14);
+}
+
+.ff-picker-item:focus {
+    outline: none;
+}
+
+.ff-picker-item:focus-visible {
+    box-shadow: inset 0 0 0 2px rgba(255,215,0,0.6);
+}
+
+.ff-picker-category {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: rgba(255,255,255,0.9);
+    background: rgba(255,255,255,0.16);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+/* "N questions" count and the empty-list message: light muted text on the dark modal */
+.ff-picker-empty,
 .ff-picker-count {
-    color: #555;
+    color: var(--ff-text-muted);
+}
+
+.ff-picker-count {
     font-size: 0.9rem;
 }
 
