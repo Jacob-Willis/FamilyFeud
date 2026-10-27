@@ -157,10 +157,6 @@
     border-top: 1px solid rgba(255,255,255,0.2);
 }
 
-.ff-start-footer .ff-start-game-button {
-    min-width: 12rem;
-}
-
 /* Narrow windows: stack the teams and the who-goes-first options */
 @media (max-width: 600px) {
     .ff-start-layout {

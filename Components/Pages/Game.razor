@@ -3,7 +3,7 @@
 @using FamilyFeud.Services.Hasura
 
 <div class="ff-page-header">
-    <button class="ff-back-button" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
+    <button class="ff-btn" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
 </div>
 
 @* Blocking Play/Pass modal after the face-off. Its backdrop covers the page and Back is disabled while it is open. *@
@@ -13,9 +13,9 @@
         <div class="ff-modal">
             <h4>Play or Pass</h4>
             <p>@(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? GameState.Team1.Name : GameState.Team2.Name) to select either:</p>
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary" @onclick="() => GameState.ChoosePlay()">Play</button>
-                <button class="btn btn-secondary" @onclick="() => GameState.ChoosePass()">Pass</button>
+            <div class="ff-btn-row ff-modal-actions">
+                <button class="ff-btn ff-btn-primary" @onclick="() => GameState.ChoosePlay()">Play</button>
+                <button class="ff-btn" @onclick="() => GameState.ChoosePass()">Pass</button>
             </div>
         </div>
     </div>
@@ -30,9 +30,9 @@
             <p>@(PendingConfirm == ConfirmAction.LoadQuestion
                 ? "This round is still in progress. Loading a new question abandons it and the round pool is lost."
                 : "This round is still in progress. Revealing all answers shows them to the audience before the round is played out.")</p>
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ConfirmPendingAction">@(PendingConfirm == ConfirmAction.LoadQuestion ? "Load Question" : "Reveal All Answers")</button>
-                <button class="btn btn-secondary" @onclick="CancelPendingAction">Cancel</button>
+            <div class="ff-btn-row ff-modal-actions">
+                <button class="ff-btn" @onclick="CancelPendingAction">Cancel</button>
+                <button class="ff-btn ff-btn-primary" @onclick="ConfirmPendingAction">@(PendingConfirm == ConfirmAction.LoadQuestion ? "Load Question" : "Reveal All Answers")</button>
             </div>
         </div>
     </div>
@@ -80,8 +80,8 @@
                     }
                 </div>
             }
-            <div class="d-flex gap-2">
-                <button class="btn btn-secondary" @onclick="CloseQuestionPicker">Cancel</button>
+            <div class="ff-btn-row ff-modal-actions">
+                <button class="ff-btn" @onclick="CloseQuestionPicker">Cancel</button>
             </div>
         </div>
     </div>
@@ -104,7 +104,7 @@
             </div>
         </div>
         <p class="ff-muted-small mb-0">@GameState.GameOverReasonText</p>
-        <button class="ff-start-game-button align-self-center" @onclick="GoBack">New game</button>
+        <button class="ff-btn ff-btn-primary align-self-center" @onclick="GoBack">New game</button>
     </div>
 }
 
@@ -152,7 +152,7 @@
     {
         <div class="alert alert-danger py-2 mb-0 d-flex align-items-center gap-3" role="alert">
             <span class="me-auto">Couldn't load the questions: @GameState.ErrorMessage</span>
-            <button class="btn btn-sm btn-outline-danger" @onclick="RetryLoadQuestions">Retry</button>
+            <button class="ff-btn ff-btn-sm" @onclick="RetryLoadQuestions">Retry</button>
         </div>
     }
     else if (NoQuestionsFound)
@@ -160,7 +160,7 @@
         @* The load worked but there are no questions to play (#33) *@
         <div class="alert alert-info py-2 mb-0 d-flex align-items-center gap-3" role="status">
             <span class="me-auto">No questions found — add some on the Questions page.</span>
-            <button class="btn btn-sm btn-outline-primary" @onclick="GoToQuestions">Go to Questions</button>
+            <button class="ff-btn ff-btn-sm" @onclick="GoToQuestions">Go to Questions</button>
         </div>
     }
 </div>
@@ -187,7 +187,7 @@
 }
 
 <div class="ff-page-footer fixed-bottom">
-    <div class="d-flex gap-2 align-items-center w-100">
+    <div class="ff-btn-row flex-nowrap w-100">
         <div class="d-flex align-items-center">
             <span class="me-2">Remaining questions in category:</span>
             <span>@QuestionsInSelectedCategory().Count</span>
@@ -201,11 +201,11 @@
                 }
             </select>
         </div>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="() => RequestLoadQuestion()">Load Question</button>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading || NoQuestionsFound || HasLoadError)" title="Pick the next question from the remaining questions" @onclick="OpenQuestionPicker">Choose question…</button>
-        <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
-        <button class="btn ff-button" @onclick="RequestRevealAll">Reveal All Answers</button>
-        <button class="btn ff-button" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
+        <button class="ff-btn" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="() => RequestLoadQuestion()">Load Question</button>
+        <button class="ff-btn" disabled="@(GameState.IsGameOver || GameState.IsLoading || NoQuestionsFound || HasLoadError)" title="Pick the next question from the remaining questions" @onclick="OpenQuestionPicker">Choose question…</button>
+        <button class="ff-btn" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
+        <button class="ff-btn" @onclick="RequestRevealAll">Reveal All Answers</button>
+        <button class="ff-btn" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
         <span class="ff-muted">Strikes:</span><span class="ff-muted-small"> @((GameState.WhichTeamsTurn == SelectedTeam.Team1) ? ($"{GameState.Team1.IncorrectStrikes} /3") : ($"{GameState.Team2.IncorrectStrikes} /3"))</span>
     </div>
 </div>

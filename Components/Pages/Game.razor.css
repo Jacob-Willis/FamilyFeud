@@ -14,6 +14,11 @@
     text-decoration: line-through;
 }
 
+/* Footer buttons (#45): one height even when some labels wrap to two lines */
+.ff-page-footer .ff-btn {
+    align-self: stretch;
+}
+
 /* Host-only question picker (#38): a wider .ff-modal with a scrolling list */
 .ff-picker {
     width: 640px;

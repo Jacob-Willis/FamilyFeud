@@ -2,7 +2,7 @@
 @using FamilyFeud.Services
 
 <div class="ff-page-header">
-    <button class="ff-back-button" @onclick="GoBack">Back</button>
+    <button class="ff-btn" @onclick="GoBack">Back</button>
 </div>
 
 <div class="ff-container">
@@ -89,7 +89,7 @@
             }
 
             <div class="ff-start-footer">
-                <button class="ff-start-game-button" @onclick="PlayGame" disabled="@VerifyStart">Start</button>
+                <button class="ff-btn ff-btn-primary" @onclick="PlayGame" disabled="@VerifyStart">Start</button>
             </div>
         </div>
     </div>
