@@ -159,10 +159,8 @@ namespace FamilyFeud.Components.Pages
                 .ToList();
         }
 
-        // "Round X of N" or "First to N points", shown under the round pool
-        private string GameProgressText => GameState.GameLength == GameLengthMode.Rounds
-            ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
-            : $"First to {GameState.TargetScore} points (round {GameState.CurrentRoundNumber})";
+        // "Round X of N", "First to N points (round X)" or both, shown under the round pool
+        private string GameProgressText => GameState.GameProgressText;
 
         // Load the next question. With no chosen question one is picked at random from the selected category;
         // the "Choose question..." modal passes the host's pick instead (#38). Both go through the same checks.

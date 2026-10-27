@@ -1,21 +1,24 @@
 /* StartGame scoped styles (master variables are global) */
 
-.ff-startgame-title {
-    margin: 0;
-    font-size: 1.25rem;
+/* One centred column: team names, who goes first, game length and Start all share its width */
+.ff-start-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 760px;
+    margin: 1rem auto 2rem auto;
 }
 
 .ff-teams-container {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
-    margin: 1rem 0 2rem 0;
-    width: 100%;
-    flex-wrap: wrap; /* allows stacking on small screens */
 }
 
 /* Input styling override for consistency */
 .ff-team-box input {
-    max-width: 100%;
+    width: 100%;
     font-size: 1.25rem;
     font-weight: 600;
     border-radius: 8px;
@@ -38,83 +41,142 @@
     background: linear-gradient(90deg, #4d79ff, #3366ff);
 }
 
-.ff-first-picker {
+/* Section panels match the team boxes */
+.ff-start-panel {
     display: flex;
-    justify-content: center;
-    gap: 1rem;
-    flex-wrap: wrap;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
+    gap: 0.75rem;
+    padding: 1.25rem;
+    border-radius: 14px;
     background: rgba(0,0,0,0.35);
-    backdrop-filter: blur(5px);
-    border-radius: 12px;
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.25);
-    max-width: 600px;
-    margin: 0 auto 2rem auto;
 }
 
-.ff-first-picker div {
+.ff-section-heading {
+    margin: 0;
+}
+
+/* Who goes first: one row of equal-width options */
+.ff-first-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+/* Shared option tile (who goes first radios and game length checkboxes) */
+.ff-option {
+    position: relative;
     display: flex;
-}
-
-.ff-first-option {
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
     cursor: pointer;
     user-select: none;
-    display: flex;
-    align-items: center;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
 
-.ff-option-content {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #fff;
-    transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.ff-option-icon {
-    font-size: 1.2rem;
-}
-
-.ff-first-picker label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #fff;
-    transition: background 0.2s ease, transform 0.15s ease;
-}
-
-/* Hover */
-.ff-first-option:hover .ff-option-content {
+.ff-option:hover {
     background: rgba(255,255,255,0.18);
     transform: translateY(-1px);
 }
 
 /* Selected state */
-.ff-radio-hidden:checked + .ff-option-content {
+.ff-option:has(input:checked) {
     background: rgba(255,255,255,0.28);
-    border: 1px solid rgba(255,255,255,0.45);
-    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.6);
 }
 
-/* Game length rows: option label followed by its rounds dropdown or target score box */
-.ff-first-picker .ff-length-picker {
+.ff-option:has(input:focus-visible) {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+.ff-first-option {
+    justify-content: center;
+    text-align: center;
+}
+
+.ff-option-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.ff-option-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+/* The radio itself is hidden; the whole tile shows the choice */
+.ff-first-options ::deep .ff-radio-hidden {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+    pointer-events: none;
+}
+
+/* Game length rows: option tile, then its dropdown or score box, then the unit */
+.ff-length-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 8rem 4rem;
     align-items: center;
     gap: 0.75rem;
-    flex-wrap: wrap;
 }
 
-.ff-length-picker .form-select,
-.ff-length-picker .form-control {
-    min-width: 7rem;
+.ff-length-check {
+    margin: 0;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.ff-length-input {
+    width: 100%;
+    min-height: 2.75rem;
+}
+
+.ff-length-unit {
+    margin: 0;
+    text-align: left;
+}
+
+/* Start sits at the foot of the last panel, below a divider */
+.ff-start-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Narrow windows: stack the teams and the who-goes-first options */
+@media (max-width: 600px) {
+    .ff-start-layout {
+        margin-top: 2.5rem; /* clear the fixed Back button */
+    }
+
+    .ff-teams-container,
+    .ff-first-options {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ff-option {
+        font-size: 1rem;
+    }
+
+    .ff-length-row {
+        grid-template-columns: minmax(0, 1fr) 5rem;
+    }
+
+    .ff-length-unit {
+        display: none;
+    }
 }

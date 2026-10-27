@@ -13,16 +13,16 @@
             {
                 <div class="alert alert-danger py-2">@_deleteError</div>
             }
-            <div class="d-flex gap-2 justify-content-end">
-                <button type="button" class="ff-modal-button ff-modal-button-cancel" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
-                <button type="button" class="ff-modal-button ff-modal-button-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
+            <div class="ff-btn-row ff-modal-actions">
+                <button type="button" class="ff-btn" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
+                <button type="button" class="ff-btn ff-btn-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
             </div>
         </div>
     </div>
 }
 
 <div class="ff-page-header">
-    <button class="ff-back-button" @onclick="GoBack">Back</button>
+    <button class="ff-btn" @onclick="GoBack">Back</button>
 </div>
 
 <div class="ff-container">
@@ -35,7 +35,7 @@
                 <option value="@category">@category</option>
             }
         </select>
-        <button class="ff-search-action-button" @onclick="NewQuestion">New Question</button>
+        <button class="ff-btn ff-btn-primary" @onclick="NewQuestion">New Question</button>
     </div>
     <div class="ff-questions-list">
         @if (IsLoading)
@@ -59,9 +59,9 @@
                         <div class="ff-answer-container-heading">
                             <h5 class="ff-muted">@q.QuestionText</h5>
                             <small class="ff-muted-small">@q.Category</small>
-                            <div class="d-flex gap-2 align-items-start">
-                                <button class="ff-button-secondary ff-button-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
-                                <button class="ff-button-danger ff-button-sm" @onclick="() => AskDelete(q)">Delete</button>
+                            <div class="ff-btn-row flex-nowrap align-items-start">
+                                <button class="ff-btn ff-btn-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
+                                <button class="ff-btn ff-btn-danger ff-btn-sm" @onclick="() => AskDelete(q)">Delete</button>
                             </div>
                         </div>
                         <ul class="ff-answer-container-answers mb-0">

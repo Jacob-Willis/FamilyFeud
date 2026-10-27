@@ -13,16 +13,16 @@
             {
                 <div class="alert alert-danger py-2">@_deleteError</div>
             }
-            <div class="d-flex gap-2 justify-content-end">
-                <button type="button" class="ff-modal-button ff-modal-button-cancel" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
-                <button type="button" class="ff-modal-button ff-modal-button-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
+            <div class="ff-btn-row ff-modal-actions">
+                <button type="button" class="ff-btn" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
+                <button type="button" class="ff-btn ff-btn-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
             </div>
         </div>
     </div>
 }
 
 <div class="ff-page-header">
-    <button class="ff-back-button" @onclick="GoBack">Back</button>
+    <button class="ff-btn" @onclick="GoBack">Back</button>
 </div>
 
 <div class="ff-container">
@@ -84,7 +84,7 @@
                                            required />
                                 </td>
                                 <td>
-                                    <button type="button" class="ff-button-secondary ff-button-sm" @onclick="() => RemoveAnswer(index)">Remove</button>
+                                    <button type="button" class="ff-btn ff-btn-sm" @onclick="() => RemoveAnswer(index)">Remove</button>
                                 </td>
                             </tr>
                         }
@@ -92,16 +92,16 @@
                 </table>
 
                 <div class="d-flex justify-content-center mt-3">
-                    <button type="button" class="ff-button-secondary" @onclick="AddAnswer" disabled="@(_answers.Count >= 6)">+ Add Answer</button>
+                    <button type="button" class="ff-btn" @onclick="AddAnswer" disabled="@(_answers.Count >= 6)">+ Add Answer</button>
                 </div>
             </div>
 
-            <div class="button-group">
-                <button type="submit" class="ff-form-button" disabled="@_isLoading">@(_isEditing ? "Update Question" : "Create Question")</button>
-                <button type="button" class="ff-form-button ff-button-secondary" @onclick="GoBack" disabled="@_isLoading">Cancel</button>
+            <div class="ff-btn-row ff-form-actions">
+                <button type="submit" class="ff-btn ff-btn-primary" disabled="@_isLoading">@(_isEditing ? "Update Question" : "Create Question")</button>
+                <button type="button" class="ff-btn" @onclick="GoBack" disabled="@_isLoading">Cancel</button>
                 @if (_isEditing && _questionLoaded)
                 {
-                    <button type="button" class="ff-button-danger" @onclick="AskDelete" disabled="@_isLoading">Delete</button>
+                    <button type="button" class="ff-btn ff-btn-danger" @onclick="AskDelete" disabled="@_isLoading">Delete</button>
                 }
             </div>
 

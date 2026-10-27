@@ -16,7 +16,7 @@ a {
     color: #006bb7;
 }
 
-.btn:focus, .btn:active:focus, .form-control:focus, .form-check-input:focus {
+.form-control:focus, .form-check-input:focus {
     box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
@@ -126,45 +126,106 @@ h1:focus {
     background: rgba(0,0,0,0.35);
 }
 
-.ff-back-button {
-    color: ButtonHighlight;
+/* Shared button system (#45). Every button in the app uses .ff-btn plus at most one variant
+   (.ff-btn-primary, .ff-btn-danger) and optionally .ff-btn-sm. The plain .ff-btn is the secondary style.
+   The fill is near-opaque so a button looks the same on the dark pages and in the white modals.
+   Put buttons that sit side by side in a .ff-btn-row; modal buttons go in a .ff-modal-actions row. */
+.ff-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-height: 2.75rem;
+    min-width: 7rem;
+    padding: 0.5rem 1.25rem;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
     text-decoration: none;
-    border: 1px solid rgba(255,255,255,0.25);
-    font-weight: 700;
-    font-size: 1.75rem;
-    background: rgba(0,0,0,0.35);
-    padding: 0.55rem 1rem;
+    color: #ffffff;
+    background: rgba(18, 20, 28, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 10px;
     backdrop-filter: blur(5px);
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.ff-back-button:hover {
-    color: ButtonHighlight;
-    background: rgba(255,255,255,0.24);
+.ff-btn:hover:not(:disabled) {
+    color: #ffffff;
+    background: rgba(60, 64, 78, 0.92);
+    border-color: rgba(255, 255, 255, 0.55);
     transform: translateY(-1px);
 }
 
-.btn.ff-button {
-    background: rgba(0,0,0,0.35);
-    padding: 0.55rem 1rem;
-    border-radius: 10px;
-    backdrop-filter: blur(5px);
-    height: 3.75rem;
-    transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-    color: ButtonHighlight;
-    text-decoration: none;
-    border: 1px solid rgba(255,255,255,0.25);
-    font-weight: 500;
-    font-size: clamp(0.1rem, 1.2vw, 1.5rem);
+.ff-btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
-.btn.ff-button:hover {
-    color: ButtonHighlight;
-    background: rgba(255,255,255,0.24);
-    transform: translateY(-1px);
+.ff-btn:focus {
+    outline: none;
 }
 
+.ff-btn:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.6);
+}
+
+.ff-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Primary: the main action of a page or modal, with the gold accent of the winner screen */
+.ff-btn-primary {
+    color: #ffd700;
+    border-color: rgba(255, 215, 0, 0.8);
+}
+
+.ff-btn-primary:hover:not(:disabled) {
+    color: #ffe24d;
+    background: rgba(82, 70, 12, 0.92);
+    border-color: #ffd700;
+}
+
+/* Danger: deletes */
+.ff-btn-danger {
+    color: #ffb3ba;
+    border-color: rgba(220, 53, 69, 0.85);
+}
+
+.ff-btn-danger:hover:not(:disabled) {
+    color: #ffffff;
+    background: rgba(187, 45, 59, 0.92);
+    border-color: #dc3545;
+}
+
+/* Small: buttons inside lists, table rows and alerts */
+.ff-btn-sm {
+    min-height: 2rem;
+    min-width: 4.5rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+
+/* A row of buttons: the same gap everywhere, wrapping on narrow windows */
+.ff-btn-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* The button row at the foot of every modal: same margin, right-aligned */
+.ff-modal-actions {
+    justify-content: flex-end;
+    margin-top: 1.25rem;
+}
 
 .Teams {
     justify-items: center;
@@ -288,30 +349,6 @@ h1:focus {
     transform: translateY(-1px);
 }
 
-.ff-start-game-button {
-    font-size: 1.4rem;
-    font-weight: 700;
-    padding: 0.75rem 2rem;
-    border-radius: 10px;
-    color: #fff;
-    background: rgba(255,255,255,0.28);
-    border: 1px solid rgba(255,255,255,0.45);
-    backdrop-filter: blur(4px);
-    cursor: pointer;
-    transition: background 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
-}
-
-.ff-start-game-button:hover:not(:disabled) {
-    background: rgba(255,255,255,0.32);
-    transform: translateY(-2px);
-}
-
-.ff-start-game-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-}
-
 /* Hidden / revealed states for audience answers */
 .audience-item.hidden .answer-text,
 .audience-item.hidden .answer-points {
@@ -362,75 +399,6 @@ h1:focus {
     word-break: break-word;
 }
 
-.ff-modal-button {
-    padding: 0.45rem 1.1rem;
-    border-radius: 6px;
-    font-weight: 600;
-    border: 1px solid transparent;
-    cursor: pointer;
-}
-
-.ff-modal-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.ff-modal-button-cancel {
-    background: #e9ecef;
-    border-color: #ced4da;
-    color: #222222;
-}
-
-.ff-modal-button-danger {
-    background: #dc3545;
-    color: #ffffff;
-}
-
-.ff-modal-button-danger:hover:not(:disabled) {
-    background: #bb2d3b;
-}
-
-/* Secondary/danger buttons on the Questions and NewQuestion pages (#17, #34).
-   Pages add their own padding/size; .ff-button-sm must stay after these so its padding wins. */
-.ff-button-secondary,
-.ff-button-danger {
-    color: ButtonHighlight;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 6px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-}
-
-.ff-button-danger {
-    border-color: rgba(220, 53, 69, 0.7);
-}
-
-.ff-button-secondary:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: translateY(-1px);
-}
-
-.ff-button-danger:hover:not(:disabled) {
-    background: rgba(220, 53, 69, 0.45);
-    border-color: rgba(220, 53, 69, 0.9);
-    transform: translateY(-1px);
-}
-
-.ff-button-secondary:disabled,
-.ff-button-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.ff-button-sm {
-    padding: 0.35rem 0.75rem;
-    font-size: 0.875rem;
-}
-
 /* When modal is shown we slightly dim the rest of the page via backdrop and pointer-events disabled by overlay; answers and footer are visually underneath */
 .ff-modal-backdrop ~ * {
     pointer-events: none;
@@ -443,26 +411,6 @@ h1:focus {
     min-height: 100vh;
 }
 
-.btn {
-    font-weight: 600;
-    display: inline-block;
-    padding: 14px 28px;
-    width: 250px;
-    border-radius: 12px;
-    background-color: #4A6CF7;
-    color: #ffffff;
-    text-align: center;
-    border: none;
-    /*    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);*/
-    box-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000;
-    transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-    .btn:hover {
-        transform: scale(1.1);
-        background-color: #5A7BFF;
-        box-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000;
-    }
 /* Winning screen (#8): shown on the host Game page and replaces the audience board once the game is over */
 .ff-winner {
     text-align: center;
