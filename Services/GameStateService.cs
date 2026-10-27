@@ -137,7 +137,7 @@ namespace FamilyFeud.Services
                     int topPoints = q.Answers.Count > 0 ? q.Answers.Max(a => a.Points) : 0;
                     if (ans.Points == topPoints)
                     {
-                        // if they got the top answer, team 1 remains in control and can choose to play or pass
+                        // if they got the top answer, team 2 remains in control and can choose to play or pass
                         PlayoffAwaitingChoice = true;
                     }
                     else
@@ -265,15 +265,29 @@ namespace FamilyFeud.Services
         {
             if (mode == GameMode.PlayOff)
             {
-                if (WhichTeamsTurn == SelectedTeam.Team1 && Team1.FirstAnswer != Answer.Blank) Team1.FirstAnswer = Answer.Blank;
-                else if (WhichTeamsTurn == SelectedTeam.Team2 && Team2.FirstAnswer != Answer.Blank) Team2.FirstAnswer = Answer.Blank;
-                // if both teams strike on their first answer, switch to the other team and continue the playoff
-                if (Team1.FirstAnswer == Answer.Blank && Team2.FirstAnswer == Answer.Blank)
+                // ignore strikes while the play/pass choice is pending or before a team is in control
+                if (PlayoffAwaitingChoice || WhichTeamsTurn == SelectedTeam.Random) return;
+
+                bool team1Striking = WhichTeamsTurn == SelectedTeam.Team1;
+                Team striker = team1Striking ? Team1 : Team2;
+                Team other = team1Striking ? Team2 : Team1;
+
+                // record the miss and hand the turn to the other team (set directly so we only notify once below)
+                striker.FirstAnswer = Answer.Blank;
+                WhichTeamsTurn = team1Striking ? SelectedTeam.Team2 : SelectedTeam.Team1;
+
+                if (other.FirstAnswer is { IsBlank: false })
                 {
+                    // the other team already gave a real answer, so they win control and choose to play or pass
+                    PlayoffAwaitingChoice = true;
+                }
+                else if (other.FirstAnswer is { IsBlank: true })
+                {
+                    // both teams struck: restart the face-off with the other team (the one that struck first)
                     ResetPlayoffState();
                 }
 
-                SwitchTeam();
+                NotifyStateChanged();
                 return;
             }
             if (mode == GameMode.PointSteal)
