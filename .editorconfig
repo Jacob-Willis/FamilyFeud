@@ -97,3 +97,6 @@ dotnet_naming_style.underscore_camel.required_prefix = _
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
 dotnet_naming_rule.private_fields_underscore.style = underscore_camel
 dotnet_naming_rule.private_fields_underscore.severity = suggestion
+
+# Android analyzer: App is the MAUI Application, not an Android.App.Application, so it needs no JNI activation constructor
+dotnet_diagnostic.DNAA0001.severity = none

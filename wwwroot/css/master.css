@@ -86,6 +86,7 @@ h1:focus {
     color: rgba(200,200,200,0.45);
     justify-items: center;
 }
+
 .ff-team-summary.selected {
     color: rgba(255,255,255,0.85);
 }
@@ -278,6 +279,12 @@ h1:focus {
     letter-spacing: 0.2px;
 }
 
+/* Validation message inside a dark panel; Bootstrap's .text-danger is too dark to read there */
+.ff-error-text {
+    color: #ffb3ba;
+    font-weight: 600;
+}
+
 /* Round points pool shown above the audience board */
 .ff-round-pool {
     display: flex;
@@ -308,7 +315,6 @@ h1:focus {
 
 .ff-question {
     display: flex;
-
     gap: 1rem;
     align-items: baseline;
 }
@@ -333,7 +339,7 @@ h1:focus {
     font-size: clamp(1rem, 1.2vw, 1.4rem);
     border-radius: 10px;
     height: auto;
-    width: 100%;    
+    width: 100%;
     background-color: rgba(50,50,155,0.35);
     border: 1px groove rgba(255,255,255,0.25);
     backdrop-filter: blur(5px);

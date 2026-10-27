@@ -6,6 +6,7 @@
     display: flex;
     justify-content: center;
     flex-direction: row;
+    flex-wrap: wrap; /* narrow windows: wrap instead of pushing New Question off screen */
     gap: 1rem;
     margin: 1rem;
     max-width: 600px;
@@ -88,3 +89,15 @@
 }
 
 /* Buttons use the shared .ff-btn classes and the delete modal uses .ff-delete-modal, all in wwwroot/css/master.css (#34, #45) */
+
+/* Narrow windows: the question text takes its own line above the category and buttons, so the card fits */
+@media (max-width: 600px) {
+    .ff-answer-container-heading {
+        flex-wrap: wrap;
+        column-gap: 0.75rem;
+    }
+
+    .ff-answer-container-heading h5 {
+        flex-basis: 100%;
+    }
+}

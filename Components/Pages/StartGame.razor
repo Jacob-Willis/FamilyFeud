@@ -81,11 +81,11 @@
             </div>
             @if (!HasGameLength)
             {
-                <p class="text-danger mb-0">Choose number of rounds, a target score, or both.</p>
+                <p class="ff-error-text mb-0">Choose number of rounds, a target score, or both.</p>
             }
             @if (!IsTargetScoreValid)
             {
-                <p class="text-danger mb-0">Target score must be a whole number from 1 to @MaxTargetScore.</p>
+                <p class="ff-error-text mb-0">Target score must be a whole number from 1 to @MaxTargetScore.</p>
             }
 
             <div class="ff-start-footer">
