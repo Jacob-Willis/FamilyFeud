@@ -62,8 +62,8 @@ namespace FamilyFeud.Services
         // Points collected this round (face-off and normal reveals). Awarded in full to the round winner by EndRound.
         public int RoundPool { get; private set; }
 
-        // Whether the current round is finished. Set by EndRound (the board was cleared in Normal play, or a steal
-        // succeeded or failed) or by AbandonRound (Reveal All mid-round). Cleared when the next question loads.
+        // Whether the current round is finished. Set by EndRound (the board was cleared in Normal play or before
+        // Play/Pass was chosen, or a steal succeeded or failed) or by AbandonRound (Reveal All mid-round). Cleared when the next question loads.
         public bool IsRoundFinished { get; private set; }
 
         // Whether anything that counts has happened this round: a scored reveal or a strike (face-off strikes
@@ -301,23 +301,28 @@ namespace FamilyFeud.Services
         public void ChoosePlay()
         {
             if (!PlayoffAwaitingChoice) return;
-            PlayoffAwaitingChoice = false;
-            Mode = GameMode.Normal;
-            Team1.IncorrectStrikes = 0;
-            Team2.IncorrectStrikes = 0;
-            NotifyStateChanged();
+            StartNormalPlay();
         }
 
         // Host indicates the control team passed the turn to the other team
         public void ChoosePass()
         {
             if (!PlayoffAwaitingChoice) return;
-            PlayoffAwaitingChoice = false;
-            // hand control to the other team (set directly so we only notify once below)
+            // hand control to the other team (set directly so StartNormalPlay notifies only once)
             WhichTeamsTurn = WhichTeamsTurn == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
+            StartNormalPlay();
+        }
+
+        // After Play or Pass: the team in control (WhichTeamsTurn) starts normal play. If the face-off already
+        // revealed every answer (e.g. a one-answer question), the board is clear, so that team wins the pool and
+        // the round ends straight away (#39). Notifies once either way.
+        private void StartNormalPlay()
+        {
+            PlayoffAwaitingChoice = false;
             Mode = GameMode.Normal;
             Team1.IncorrectStrikes = 0;
             Team2.IncorrectStrikes = 0;
+            if (CurrentQuestion != null && CheckAndFinishRound(CurrentQuestion)) return;
             NotifyStateChanged();
         }
 
