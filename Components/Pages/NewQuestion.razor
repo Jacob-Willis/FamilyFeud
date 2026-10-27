@@ -1,6 +1,26 @@
 @page "/new-question"
 @page "/new-question/{QuestionId:int}"
 
+@* Delete confirmation (#17). In-page modal because browser confirm() isn't reliable in BlazorWebView. *@
+@if (_showDeleteConfirm)
+{
+    <div class="ff-modal-backdrop">
+        <div class="ff-modal ff-delete-modal">
+            <h4>Delete question?</h4>
+            <p class="mb-1">&ldquo;@_questionText&rdquo;</p>
+            <p class="text-muted small">This deletes the question and all of its saved answers. It can't be undone.</p>
+            @if (!string.IsNullOrEmpty(_deleteError))
+            {
+                <div class="alert alert-danger py-2">@_deleteError</div>
+            }
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="ff-modal-button ff-modal-button-cancel" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
+                <button type="button" class="ff-modal-button ff-modal-button-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="ff-page-header">
     <button class="ff-back-button" @onclick="GoBack">Back</button>
 </div>
@@ -79,6 +99,10 @@
             <div class="button-group">
                 <button type="submit" class="ff-form-button" disabled="@_isLoading">@(_isEditing ? "Update Question" : "Create Question")</button>
                 <button type="button" class="ff-form-button ff-button-secondary" @onclick="GoBack" disabled="@_isLoading">Cancel</button>
+                @if (_isEditing && _questionLoaded)
+                {
+                    <button type="button" class="ff-button-danger" @onclick="AskDelete" disabled="@_isLoading">Delete</button>
+                }
             </div>
 
             @if (!string.IsNullOrEmpty(_message))

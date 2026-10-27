@@ -6,6 +6,7 @@ namespace FamilyFeud.Services.Hasura
         Task<Question?> GetQuestionAsync(int id);
         Task<int> AddQuestionAsync(Question question);
         Task UpdateQuestionAsync(Question question);
-        Task DeleteQuestionAsync(int id);
+        /// <summary>Deletes a question and its answers. Returns false if no question had this id.</summary>
+        Task<bool> DeleteQuestionAsync(int id);
     }
 }

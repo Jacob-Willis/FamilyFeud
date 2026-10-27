@@ -151,16 +151,23 @@ mutation InsertQuestion($question: String!, $category: String, $answers: [answer
             return input.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
         }
 
-        public async Task DeleteQuestionAsync(int id)
+        public async Task<bool> DeleteQuestionAsync(int id)
         {
+            // Delete the answers first so the delete doesn't depend on an FK cascade.
+            // Hasura runs both root fields of one mutation in a single transaction, in order.
             string mutation = @"
 mutation DeleteQuestion($id: Int!) {
+  delete_answers(where: { question_id: { _eq: $id } }) {
+    affected_rows
+  }
   delete_questions_by_pk(id: $id) {
     id
   }
 }";
             GraphQLRequest req = new GraphQLRequest { Query = mutation, Variables = new { id } };
-            await SendRequestAsync<GenericMutationResponse>(req).ConfigureAwait(false);
+            DeleteQuestionResponse? res = await SendRequestAsync<DeleteQuestionResponse>(req).ConfigureAwait(false);
+            // Null means no question had this id (e.g. it was already deleted).
+            return res?.DeleteQuestionsByPk != null;
         }
 
         // Generic request sender with error handling
@@ -210,6 +217,18 @@ mutation DeleteQuestion($id: Int!) {
             public InsertedQuestion? InsertQuestionsOne { get; set; }
 
             public class InsertedQuestion
+            {
+                [JsonPropertyName("id")]
+                public int Id { get; set; }
+            }
+        }
+
+        private class DeleteQuestionResponse
+        {
+            [JsonPropertyName("delete_questions_by_pk")]
+            public DeletedQuestion? DeleteQuestionsByPk { get; set; }
+
+            public class DeletedQuestion
             {
                 [JsonPropertyName("id")]
                 public int Id { get; set; }
