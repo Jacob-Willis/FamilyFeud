@@ -160,9 +160,9 @@ namespace FamilyFeud.Services
                     }
                     else
                     {
-                        // In the case of a tie, randomly select control team
-                        // This is fallback but shouldn't really happen
-                        WhichTeamsTurn = ChooseRandomFirst();
+                        // Tie (only possible when two answers share a value): pick the control team at random.
+                        // Set WhichTeamsTurn directly so StartingTeam (and its alternation) is untouched and we notify once below.
+                        WhichTeamsTurn = PickRandomTeam();
                     }
                     PlayoffAwaitingChoice = true;
                 }
@@ -443,10 +443,15 @@ namespace FamilyFeud.Services
             }
         }
 
+        // Team1 or Team2 with equal chance; changes no state
+        private static SelectedTeam PickRandomTeam()
+        {
+            return Random.Shared.Next(0, 2) == 0 ? SelectedTeam.Team1 : SelectedTeam.Team2;
+        }
+
         public SelectedTeam ChooseRandomFirst()
         {
-            Random rand = new Random();
-            SelectedTeam pick = rand.Next(0, 2) == 0 ? SelectedTeam.Team1 : SelectedTeam.Team2;
+            SelectedTeam pick = PickRandomTeam();
             SwitchTeam(pick);
             // set StartingTeam so we can alternate between teams
             StartingTeam = pick;
