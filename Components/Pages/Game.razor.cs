@@ -53,13 +53,17 @@ namespace FamilyFeud.Components.Pages
         // missing category (#41). The match ignores case, like IsInCategory (#31).
         private string SelectedCategory
         {
-            get
-            {
-                if (IsAllCategories(_selectedCategory)) return AllCategories;
-                string? current = Categories.FirstOrDefault(c => string.Equals(c, _selectedCategory, StringComparison.OrdinalIgnoreCase));
-                return current ?? AllCategories;
-            }
+            get => ResolveCategory(_selectedCategory);
             set => _selectedCategory = value ?? AllCategories;
+        }
+
+        // A stored category value as it currently stands: the matching entry in Categories (ignoring case), or
+        // AllCategories if that category no longer has any questions in the cache (#41, #44)
+        private string ResolveCategory(string? category)
+        {
+            if (IsAllCategories(category)) return AllCategories;
+            string? current = Categories.FirstOrDefault(c => string.Equals(c, category, StringComparison.OrdinalIgnoreCase));
+            return current ?? AllCategories;
         }
 
         // The audience window, kept so it can be closed again (toggle, Back, or leaving this page)
@@ -81,8 +85,19 @@ namespace FamilyFeud.Components.Pages
         // Whether the host-only "Choose question..." modal is open (#38). The audience window never shows it.
         private bool IsPickerOpen { get; set; }
 
-        // Text typed into the picker's search box; filters the listed questions by their text
+        // Text typed into the picker's search box; filters the listed questions by their text or category (#44)
         private string PickerSearch { get; set; } = string.Empty;
+
+        // The category picked in the picker's own dropdown (#44). It starts as the footer's category each time the
+        // picker opens, but changing it never changes the footer: the picker is a one-off choice.
+        private string _pickerCategory = AllCategories;
+
+        // Picker category as it currently stands; reads as AllCategories if it no longer has questions (#41)
+        private string PickerCategory
+        {
+            get => ResolveCategory(_pickerCategory);
+            set => _pickerCategory = value ?? AllCategories;
+        }
 
         // Strike only makes sense during a live round with no modal open
         private bool CanStrike => CurrentQuestion != null
@@ -259,15 +274,20 @@ namespace FamilyFeud.Components.Pages
             await LoadQuestion(chosen);
         }
 
-        // Questions listed in the picker: the remaining (never already asked) questions in the selected category,
-        // narrowed by the search box (#38)
+        // Remaining (never already asked) questions in the picker's category (#38, #44)
+        private List<Question> PickerQuestionsInCategory() =>
+            RemainingQuestions.Where(q => IsInCategory(q, PickerCategory)).ToList();
+
+        // Questions listed in the picker: the remaining questions in the picker's category, narrowed by the search
+        // box. The search ignores case and matches the question text or its category (#38, #44).
         private List<Question> PickerQuestions()
         {
-            List<Question> list = QuestionsInSelectedCategory();
+            List<Question> list = PickerQuestionsInCategory();
             string search = PickerSearch.Trim();
             if (search.Length == 0) return list;
             return list
-                .Where(q => q.QuestionText.Contains(search, StringComparison.OrdinalIgnoreCase))
+                .Where(q => (q.QuestionText ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || (q.Category ?? string.Empty).Contains(search, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
 
@@ -281,6 +301,7 @@ namespace FamilyFeud.Components.Pages
                 return;
             }
             PickerSearch = string.Empty;
+            PickerCategory = SelectedCategory;
             IsPickerOpen = true;
         }
 

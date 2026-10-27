@@ -38,21 +38,32 @@
     </div>
 }
 
-@* Host-only question picker (#38): lists the remaining questions in the selected category. The audience window
-   mounts Audience.razor, not this page, so it never sees this list. *@
+@* Host-only question picker (#38): lists the remaining questions in the picker's own category (#44), which starts as
+   the footer's category but doesn't change it. The audience window mounts Audience.razor, not this page, so it never
+   sees this list. *@
 @if (IsPickerOpen)
 {
     List<Question> picks = PickerQuestions();
+    int inCategory = PickerQuestionsInCategory().Count;
     <div class="ff-modal-backdrop">
         <div class="ff-modal ff-picker">
             <h4>Choose question</h4>
-            <p class="mb-2">Remaining questions in @(IsAllCategories(SelectedCategory) ? "all categories" : SelectedCategory): @QuestionsInSelectedCategory().Count</p>
-            <input class="form-control mb-2" type="search" placeholder="Search questions" aria-label="Search questions" @bind="PickerSearch" @bind:event="oninput" />
+            <div class="d-flex gap-2 mb-2">
+                <select class="form-select w-auto" aria-label="Picker category" @bind="PickerCategory">
+                    <option value="@AllCategories">@CategoryLabel(AllCategories)</option>
+                    @foreach (string c in Categories)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+                <input class="form-control" type="search" placeholder="Search questions or categories" aria-label="Search questions or categories" @bind="PickerSearch" @bind:event="oninput" />
+            </div>
+            <p class="ff-muted-small mb-2">@picks.Count @(picks.Count == 1 ? "question" : "questions")</p>
             @if (picks.Count == 0)
             {
-                <p class="ff-picker-empty mb-2">@(QuestionsInSelectedCategory().Count == 0
-                    ? $"No questions left in {CategoryLabel(SelectedCategory)} — choose another category or use Load Question."
-                    : "No questions match your search.")</p>
+                <p class="ff-picker-empty mb-2">@(inCategory == 0
+                    ? $"No questions left in {CategoryLabel(PickerCategory)} — choose another category."
+                    : $"No questions in {CategoryLabel(PickerCategory)} match your search.")</p>
             }
             else
             {
@@ -61,7 +72,7 @@
                     {
                         <button @key="q.Id" type="button" class="list-group-item list-group-item-action" @onclick="() => PickQuestion(q)">
                             <span>@q.QuestionText</span>
-                            @if (IsAllCategories(SelectedCategory) &&!string.IsNullOrWhiteSpace(q.Category))
+                            @if (IsAllCategories(PickerCategory) && !string.IsNullOrWhiteSpace(q.Category))
                             {
                                 <span class="badge text-bg-secondary ms-2">@q.Category</span>
                             }
@@ -191,7 +202,7 @@
             </select>
         </div>
         <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading)" @onclick="() => RequestLoadQuestion()">Load Question</button>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading || NoQuestionsFound || HasLoadError)" title="Pick the next question from the remaining questions in the selected category" @onclick="OpenQuestionPicker">Choose question…</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver || GameState.IsLoading || NoQuestionsFound || HasLoadError)" title="Pick the next question from the remaining questions" @onclick="OpenQuestionPicker">Choose question…</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
         <button class="btn ff-button" @onclick="RequestRevealAll">Reveal All Answers</button>
         <button class="btn ff-button" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
