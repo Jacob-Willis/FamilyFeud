@@ -88,67 +88,54 @@ mutation InsertQuestion($question: String!, $category: String, $answers: [answer
         {
             if (question == null) throw new ArgumentNullException(nameof(question));
 
-            // Separate answers into existing (with IDs) and new (without IDs)
-            var existingAnswers = question.Answers.Where(a => a.Id > 0).ToList();
-            var newAnswers = question.Answers.Where(a => a.Id == 0).ToList();
-            var existingAnswerIds = existingAnswers.Select(a => a.Id).ToList();
-
-            // Build new answers input (without IDs since insert_input cannot have primary keys)
-            var newAnswersInput = newAnswers.Select(a => new
-            {
-                question_id = question.Id,
-                answer = a.AnswerText,
-                points = a.Points
-            }).ToList();
-
-            // Build GraphQL mutation dynamically
-            var mutationBuilder = new System.Text.StringBuilder();
-            mutationBuilder.AppendLine("mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $existingAnswerIds: [Int!]!" + (newAnswersInput.Count > 0 ? ", $newAnswersData: [answers_insert_input!]!" : "") + ") {");
-            mutationBuilder.AppendLine("  update_questions_by_pk(pk_columns: { id: $id }, _set: { question: $question, category: $category }) {");
-            mutationBuilder.AppendLine("    id");
-            mutationBuilder.AppendLine("  }");
-            mutationBuilder.AppendLine("  delete_answers(where: { question_id: { _eq: $id }, id: { _nin: $existingAnswerIds } }) {");
-            mutationBuilder.AppendLine("    affected_rows");
-            mutationBuilder.AppendLine("  }");
-
-            // Add update mutations for each existing answer
-            for (int i = 0; i < existingAnswers.Count; i++)
-            {
-                var answer = existingAnswers[i];
-                mutationBuilder.AppendLine($"  update_answer_{i}: update_answers_by_pk(pk_columns: {{ id: {answer.Id} }}, _set: {{ answer: \"{EscapeGraphQLString(answer.AnswerText)}\", points: {answer.Points} }}) {{");
-                mutationBuilder.AppendLine("    affected_rows");
-                mutationBuilder.AppendLine("  }");
-            }
-
-            // Add insert mutation for new answers only if there are any
-            if (newAnswersInput.Count > 0)
-            {
-                mutationBuilder.AppendLine("  insert_answers(objects: $newAnswersData) {");
-                mutationBuilder.AppendLine("    affected_rows");
-                mutationBuilder.AppendLine("  }");
-            }
-
-            mutationBuilder.AppendLine("}");
+            // Every value goes in as a GraphQL variable, so answer text never needs escaping.
+            // Hasura runs all root fields of one mutation in a single transaction, in order:
+            // 1. delete answers the host removed, 2. update the existing ones,
+            // 3. update the question and insert the new answers.
+            // The app_full_access role can't set answers.question_id, so new answers go in as a
+            // nested insert under the question (Hasura fills in question_id). That needs an upsert
+            // on questions_pkey, which also updates the question text and category.
+            string mutation = @"
+mutation UpdateQuestion($id: Int!, $question: String!, $category: String, $existingAnswerIds: [Int!]!, $answerUpdates: [answers_updates!]!, $newAnswers: [answers_insert_input!]!) {
+  delete_answers(where: { question_id: { _eq: $id }, id: { _nin: $existingAnswerIds } }) {
+    affected_rows
+  }
+  update_answers_many(updates: $answerUpdates) {
+    affected_rows
+  }
+  insert_questions_one(
+    object: { id: $id, question: $question, category: $category, answers: { data: $newAnswers } },
+    on_conflict: { constraint: questions_pkey, update_columns: [question, category] }
+  ) {
+    id
+  }
+}";
+            // Answers with an id already exist and are updated; answers without one are inserted.
+            List<Answer> existingAnswers = question.Answers.Where(a => a.Id > 0).ToList();
+            List<Answer> newAnswers = question.Answers.Where(a => a.Id == 0).ToList();
 
             var variables = new
             {
                 id = question.Id,
                 question = question.QuestionText,
                 category = question.Category,
-                existingAnswerIds = existingAnswerIds,
-                newAnswersData = newAnswersInput
+                existingAnswerIds = existingAnswers.Select(a => a.Id).ToList(),
+                answerUpdates = existingAnswers.Select(a => new
+                {
+                    // Match on question_id too, so an update can only touch this question's answers.
+                    where = new { id = new { _eq = a.Id }, question_id = new { _eq = question.Id } },
+                    _set = new { answer = a.AnswerText, points = a.Points }
+                }).ToList(),
+                // Sent without id or question_id; the nested insert links them to the question.
+                newAnswers = newAnswers.Select(a => new
+                {
+                    answer = a.AnswerText,
+                    points = a.Points
+                }).ToList()
             };
 
-            GraphQLRequest req = new GraphQLRequest { Query = mutationBuilder.ToString(), Variables = variables };
+            GraphQLRequest req = new GraphQLRequest { Query = mutation, Variables = variables };
             await SendRequestAsync<GenericMutationResponse>(req).ConfigureAwait(false);
-        }
-
-        private string EscapeGraphQLString(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return string.Empty;
-
-            return input.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
         }
 
         public async Task<bool> DeleteQuestionAsync(int id)
