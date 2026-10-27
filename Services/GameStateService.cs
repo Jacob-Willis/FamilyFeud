@@ -104,11 +104,11 @@ namespace FamilyFeud.Services
             get
             {
                 if (TotalRounds is int total && TargetScore is int target)
-                    return $"Round {CurrentRoundNumber} of {total} · First to {target} points";
+                    return $"Round {CurrentRoundNumber} of {total} · First to {PointsText(target)}";
                 if (TotalRounds is int rounds)
                     return $"Round {CurrentRoundNumber} of {rounds}";
                 if (TargetScore is int score)
-                    return $"First to {score} points (round {CurrentRoundNumber})";
+                    return $"First to {PointsText(score)} (round {CurrentRoundNumber})";
                 return $"Round {CurrentRoundNumber}";
             }
         }
@@ -144,14 +144,15 @@ namespace FamilyFeud.Services
             get
             {
                 string rounds = RoundsPlayed == 1 ? "1 round" : $"{RoundsPlayed} rounds";
+                string target = PointsText(TargetScore ?? 0);
                 return EndReason switch
                 {
                     GameEndReason.RoundsPlayed => $"After {rounds}",
                     GameEndReason.TargetScore => Winner switch
                     {
-                        SelectedTeam.Team1 => $"{Team1.Name} reached {TargetScore} points after {rounds}",
-                        SelectedTeam.Team2 => $"{Team2.Name} reached {TargetScore} points after {rounds}",
-                        _ => $"Reached {TargetScore} points after {rounds}"
+                        SelectedTeam.Team1 => $"{Team1.Name} reached {target} after {rounds}",
+                        SelectedTeam.Team2 => $"{Team2.Name} reached {target} after {rounds}",
+                        _ => $"Reached {target} after {rounds}"
                     },
                     GameEndReason.OutOfQuestions => $"Out of questions after {rounds}",
                     _ => string.Empty
@@ -462,6 +463,12 @@ namespace FamilyFeud.Services
                     NotifyStateChanged();
                 }
             }
+        }
+
+        // "1 point" or "N points", so a target of 1 doesn't read "1 points" (#53)
+        private static string PointsText(int points)
+        {
+            return points == 1 ? "1 point" : $"{points} points";
         }
 
         // Team1 or Team2 with equal chance; changes no state
