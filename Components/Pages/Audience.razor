@@ -32,6 +32,10 @@
 @if (GameState.CurrentQuestion != null)
 {
     <div class="ff-container ff-container-border">
+        <div class="ff-round-pool">
+            <span class="ff-round-pool-label">Pool</span>
+            <span class="ff-round-pool-value">@GameState.RoundPool</span>
+        </div>
         <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
         <div class="ff-answer-box">
             @foreach (var a in GameState.CurrentQuestion.Answers)
