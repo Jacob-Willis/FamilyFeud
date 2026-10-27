@@ -52,14 +52,14 @@
         <div class="ff-modal ff-picker">
             <h4>Choose question</h4>
             <div class="d-flex gap-2 mb-2">
-                <select class="form-select w-auto" aria-label="Picker category" @bind="PickerCategory">
+                <select class="ff-select" aria-label="Picker category" @bind="PickerCategory">
                     <option value="@AllCategories">@CategoryLabel(AllCategories)</option>
                     @foreach (string c in Categories)
                     {
                         <option value="@c">@c</option>
                     }
                 </select>
-                <input class="form-control" type="search" placeholder="Search questions or categories" aria-label="Search questions or categories" @bind="PickerSearch" @bind:event="oninput" />
+                <input class="ff-input flex-grow-1" type="search" placeholder="Search questions or categories" aria-label="Search questions or categories" @bind="PickerSearch" @bind:event="oninput" />
             </div>
             <p class="ff-picker-count mb-2">@picks.Count @(picks.Count == 1 ? "question" : "questions")</p>
             @if (picks.Count == 0)
@@ -70,14 +70,14 @@
             }
             else
             {
-                <div class="ff-picker-list list-group mb-2">
+                <div class="ff-picker-list mb-2">
                     @foreach (Question q in picks)
                     {
-                        <button @key="q.Id" type="button" class="list-group-item list-group-item-action" @onclick="() => PickQuestion(q)">
+                        <button @key="q.Id" type="button" class="ff-picker-item" @onclick="() => PickQuestion(q)">
                             <span>@q.QuestionText</span>
                             @if (IsAllCategories(PickerCategory) && !string.IsNullOrWhiteSpace(q.Category))
                             {
-                                <span class="badge text-bg-secondary ms-2">@q.Category</span>
+                                <span class="ff-picker-category ms-2">@q.Category</span>
                             }
                         </button>
                     }
@@ -112,8 +112,9 @@
 }
 
 <div class="ff-container ff-container-border">
+    @* Panel headings (#56) have no margin of their own: the panel's flex gap is the only space below them *@
+    <h3 class="ff-muted mb-0">Teams</h3>
     <div class="Teams">
-        <h3 class="ff-muted">Teams</h3>
         <div class="d-flex gap-5">
             <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
                 <strong>@GameState.Team1.Name</strong>
@@ -130,14 +131,14 @@
     @if (CurrentQuestion != null)
     {
         <div class="ff-question">
-            <p class="ff-muted">Question:</p>
-            <p class="ff-muted-small">@CurrentQuestion.QuestionText</p>
+            <p class="ff-muted mb-0">Question:</p>
+            <p class="ff-muted-small mb-0">@CurrentQuestion.QuestionText</p>
         </div>
     }
     @* Mode stays PointSteal after the round ends, so also check IsRoundFinished (#40) *@
     @if (GameState.Mode == GameMode.PointSteal && !GameState.IsRoundFinished)
     {
-        <div class="ff-muted-small">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
+        <div class="ff-muted-small mb-0">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
     }
     @if (!string.IsNullOrEmpty(InfoMessage))
     {
@@ -146,7 +147,7 @@
     @* Loading questions from Hasura failed: show why and let the host try again (#15) *@
     @if (GameState.IsLoading)
     {
-        <div class="d-flex align-items-center gap-2 ff-muted-small" role="status">
+        <div class="d-flex align-items-center gap-2 ff-muted-small mb-0" role="status">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
             <span>Loading questions...</span>
         </div>
@@ -171,7 +172,7 @@
 @if (CurrentQuestion != null)
 {
     <div class="ff-container ff-container-border">
-        <p class="ff-muted">Answers</p>
+        <p class="ff-muted mb-0">Answers</p>
         <div class="ff-answer-box">
             @foreach (Answer a in CurrentQuestion.Answers)
             {
@@ -199,7 +200,7 @@
             <span>@QuestionsInSelectedCategory().Count</span>
         </div>
         <div class="me-auto">
-            <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
+            <select class="ff-select ff-footer-select" aria-label="Question category" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
                 <option value="@AllCategories">@CategoryLabel(AllCategories)</option>
                 @foreach (string c in Categories)
                 {
