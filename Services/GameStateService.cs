@@ -36,6 +36,11 @@ namespace FamilyFeud.Services
 
         public List<Question> Questions { get; private set; } = new();
 
+        // The category the host picked on the Game page, kept here so it survives that page being re-created (e.g. a
+        // visit to the Questions page mid-game) (#50). Empty means "All categories". Only the host page uses it, so
+        // setting it doesn't notify. The page resolves it against the cached categories. Cleared by ResetGame.
+        public string SelectedCategory { get; set; } = string.Empty;
+
         // Ids of the questions asked this game, read-only (#32). Cleared by ResetGame.
         public IReadOnlyCollection<int> AskedQuestionIds => _askedQuestionIds;
 
@@ -515,6 +520,7 @@ namespace FamilyFeud.Services
             IsGameOver = false;
             EndReason = GameEndReason.None;
             _askedQuestionIds.Clear();
+            SelectedCategory = string.Empty;
             NotifyStateChanged();
         }
 
