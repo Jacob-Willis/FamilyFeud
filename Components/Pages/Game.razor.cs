@@ -255,6 +255,7 @@ namespace FamilyFeud.Components.Pages
                 // Create a window that hosts the audience-only page
                 Window window = new Window(new AudiencePage()) { Title = "Audience" };
                 _audienceWindow = window;
+                window.Destroying += OnAudienceWindowDestroying;
                 MainThread.BeginInvokeOnMainThread(() =>
                 {
                     Application.Current?.OpenWindow(window);
@@ -264,6 +265,16 @@ namespace FamilyFeud.Components.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"OpenGameWindow error: {ex}");
             }
+        }
+
+        // The audience window was closed with its own X button: forget it so the
+        // toggle button opens a new one on the next click (#25).
+        private void OnAudienceWindowDestroying(object? sender, EventArgs e)
+        {
+            if (sender is Window window) window.Destroying -= OnAudienceWindowDestroying;
+            if (!ReferenceEquals(sender, _audienceWindow)) return;
+            _audienceWindow = null;
+            try { _ = InvokeAsync(StateHasChanged); } catch { }
         }
 
         public void Dispose()
