@@ -20,6 +20,23 @@
     </div>
 }
 
+@* Confirmation before abandoning or spoiling a round in progress (#13) *@
+@if (PendingConfirm != ConfirmAction.None)
+{
+    <div class="ff-modal-backdrop">
+        <div class="ff-modal">
+            <h4>@(PendingConfirm == ConfirmAction.LoadQuestion ? "Load a new question?" : "Reveal all answers?")</h4>
+            <p>@(PendingConfirm == ConfirmAction.LoadQuestion
+                ? "This round is still in progress. Loading a new question abandons it and the round pool is lost."
+                : "This round is still in progress. Revealing all answers shows them to the audience before the round is played out.")</p>
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ConfirmPendingAction">@(PendingConfirm == ConfirmAction.LoadQuestion ? "Load Question" : "Reveal All Answers")</button>
+                <button class="btn btn-secondary" @onclick="CancelPendingAction">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
 @* Winning screen (#8): shown above the board once the game is over; the last round's answers stay visible below *@
 @if (GameState.IsGameOver)
 {
@@ -105,10 +122,10 @@
                 }
             </select>
         </div>
-        <button class="btn ff-button" disabled="@(GameState.IsGameOver)" @onclick="async () => { if (!IsChoiceModalOpen) await LoadQuestion(); }">Load Question</button>
+        <button class="btn ff-button" disabled="@(GameState.IsGameOver)" @onclick="RequestLoadQuestion">Load Question</button>
         <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
-        <button class="btn ff-button" @onclick="() => { if (!IsChoiceModalOpen) GameState.RevealAllAnswers(CurrentQuestion?.Id ?? 0); }">Reveal All Answers</button>
-        <button class="btn ff-button" disabled="@(GameState.IsRoundFinished)" @onclick="() => GameState.HostStrike()">Strike</button>
+        <button class="btn ff-button" @onclick="RequestRevealAll">Reveal All Answers</button>
+        <button class="btn ff-button" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
         <span class="ff-muted">Strikes:</span><span class="ff-muted-small"> @((GameState.WhichTeamsTurn == SelectedTeam.Team1) ? ($"{GameState.Team1.IncorrectStrikes} /3") : ($"{GameState.Team2.IncorrectStrikes} /3"))</span>
     </div>
 </div>
