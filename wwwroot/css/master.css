@@ -373,13 +373,6 @@ h1:focus {
     transition: opacity 400ms ease, transform 400ms ease;
 }
 
-.audience-controls {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 10000;
-}
-
 /* Modal backdrop and modal: the Game page's Play/Pass, confirmation and question picker modals, and the delete modals */
 .ff-modal-backdrop {
     position: fixed;
@@ -478,13 +471,6 @@ h1:focus {
 /* When modal is shown we slightly dim the rest of the page via backdrop and pointer-events disabled by overlay; answers and footer are visually underneath */
 .ff-modal-backdrop ~ * {
     pointer-events: none;
-}
-
-.layout-root {
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    min-height: 100vh;
 }
 
 /* Winning screen (#8): shown on the host Game page and replaces the audience board once the game is over */
