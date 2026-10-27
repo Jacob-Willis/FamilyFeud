@@ -64,7 +64,7 @@ else
             </div>
             <p class="ff-muted">@GameState.CurrentQuestion.QuestionText</p>
             <div class="ff-answer-box">
-                @foreach (Answer a in GameState.CurrentQuestion.Answers)
+                @foreach (Answer a in GameState.CurrentQuestion.Answers.OrderByDescending(a => a.Points))
                 {
                     bool revealed = GameState.IsAnswerRevealed(GameState.CurrentQuestion.Id, a.Id);
                     <div @key="@(GameState.CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item audience-item @(revealed ? "revealed" : "hidden")">

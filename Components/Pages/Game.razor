@@ -174,7 +174,7 @@
     <div class="ff-container ff-container-border">
         <p class="ff-muted mb-0">Answers</p>
         <div class="ff-answer-box">
-            @foreach (Answer a in CurrentQuestion.Answers)
+            @foreach (Answer a in CurrentQuestion.Answers.OrderByDescending(a => a.Points))
             {
                 bool isRevealed = GameState.IsAnswerRevealed(CurrentQuestion.Id, a.Id);
                 <button @key="@(CurrentQuestion.Id + "-" + a.Id)" class="ff-answer-item @(isRevealed ? "revealed" : "")" disabled="@(IsChoiceModalOpen || GameState.IsRoundFinished || isRevealed)" title="@(isRevealed ? "Already revealed" : null)" @onclick="() => { if (!IsChoiceModalOpen && !GameState.IsRoundFinished && !isRevealed) RevealAnswer(a); }">
