@@ -23,26 +23,43 @@ namespace FamilyFeud.Components.Pages
         // Short info message for the host, e.g. when the selected category has run out of questions (#14, #28)
         private string? InfoMessage { get; set; }
 
-        // Categories for optional filtering ("All" first, then every category that has a question in the cache).
+        // Every category that has a question in the cache (the dropdown lists "All categories" before these).
         // Worked out from GameState.Questions on every render, so categories added or emptied on the Questions
         // page show up straight away (#41). Categories with no unasked questions stay listed, so picking one
         // still gives the "No questions left in X" fallback (#14).
         private List<string> Categories => BuildCategories();
 
-        // The category the host picked in the dropdown
-        private string _selectedCategory = "All";
+        // Dropdown value for "All categories" (no filtering). Real categories are trimmed and never empty, so a
+        // question category that is literally called "All" can't clash with it and is treated like any other (#42).
+        private const string AllCategories = "";
 
-        // Selected category for filtering; "All" means no filtering. If the picked category no longer has any
-        // questions in the cache it reads as "All", so the dropdown and the filter never point at a missing
-        // category (#41). The match ignores case, like QuestionsInSelectedCategory (#31).
+        // Whether a category value means "All categories"
+        private static bool IsAllCategories(string? category) => string.IsNullOrEmpty(category);
+
+        // Text shown for a category value: "All categories" for the sentinel, otherwise the category itself
+        private static string CategoryLabel(string? category) => IsAllCategories(category) ? "All categories" : category!;
+
+        // Whether a question belongs to a category value. The sentinel matches every question; otherwise the
+        // question's category is trimmed and compared ignoring case, the same way BuildCategories groups them (#31).
+        private static bool IsInCategory(Question q, string? category) =>
+            IsAllCategories(category)
+            || string.Equals((q.Category ?? string.Empty).Trim(), category, StringComparison.OrdinalIgnoreCase);
+
+        // The category the host picked in the dropdown
+        private string _selectedCategory = AllCategories;
+
+        // Selected category for filtering; AllCategories means no filtering. If the picked category no longer has
+        // any questions in the cache it reads as AllCategories, so the dropdown and the filter never point at a
+        // missing category (#41). The match ignores case, like IsInCategory (#31).
         private string SelectedCategory
         {
             get
             {
+                if (IsAllCategories(_selectedCategory)) return AllCategories;
                 string? current = Categories.FirstOrDefault(c => string.Equals(c, _selectedCategory, StringComparison.OrdinalIgnoreCase));
-                return current ?? "All";
+                return current ?? AllCategories;
             }
-            set => _selectedCategory = string.IsNullOrEmpty(value) ? "All" : value;
+            set => _selectedCategory = value ?? AllCategories;
         }
 
         // The audience window, kept so it can be closed again (toggle, Back, or leaving this page)
@@ -112,21 +129,18 @@ namespace FamilyFeud.Components.Pages
                 .OrderBy(c => c)
                 .ToList();
 
-            List<string> categories = new List<string> { "All" };
-            categories.AddRange(cats);
-            return categories;
+            return cats;
         }
 
-        // Remaining questions in the selected category ("All" means every remaining question). LoadQuestion and the
-        // footer count both use this so they always agree (#31). Categories are trimmed and compared ignoring case,
-        // the same way BuildCategories groups them for the dropdown.
+        // Remaining questions in the selected category (AllCategories means every remaining question). LoadQuestion
+        // and the footer count both use this so they always agree (#31).
         private List<Question> QuestionsInSelectedCategory()
         {
-            if (string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "All")
+            if (IsAllCategories(SelectedCategory))
                 return RemainingQuestions;
 
             return RemainingQuestions
-                .Where(q => string.Equals((q.Category ?? string.Empty).Trim(), SelectedCategory, StringComparison.OrdinalIgnoreCase))
+                .Where(q => IsInCategory(q, SelectedCategory))
                 .ToList();
         }
 
@@ -183,7 +197,7 @@ namespace FamilyFeud.Components.Pages
                 if (pool.Count == 0)
                 {
                     // No questions left in the selected category; fall back to any remaining question (#14)
-                    InfoMessage = $"No questions left in {SelectedCategory} — picked from all categories";
+                    InfoMessage = $"No questions left in {CategoryLabel(SelectedCategory)}— picked from all categories";
                     pool = RemainingQuestions;
                 }
 
