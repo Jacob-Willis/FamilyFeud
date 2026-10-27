@@ -93,7 +93,7 @@ namespace FamilyFeud.Services
             }
         }
 
-        // Winning screen headline: "<name> wins!" or "It's a tie!" (empty while the game is running)
+        // Winning screen headline: "Winner: <name>" or "It's a tie!"; worded so it reads right for singular and plural team names (empty while the game is running)
         public string WinnerHeadline
         {
             get
@@ -101,8 +101,8 @@ namespace FamilyFeud.Services
                 if (!IsGameOver) return string.Empty;
                 return Winner switch
                 {
-                    SelectedTeam.Team1 => $"{Team1.Name} wins!",
-                    SelectedTeam.Team2 => $"{Team2.Name} wins!",
+                    SelectedTeam.Team1 => $"Winner: {Team1.Name}",
+                    SelectedTeam.Team2 => $"Winner: {Team2.Name}",
                     _ => "It's a tie!"
                 };
             }
