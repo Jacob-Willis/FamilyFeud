@@ -65,16 +65,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Remove="wwwroot\Images\dotnet_bot.svg" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <MauiImage Include="wwwroot\Images\dotnet_bot.svg">
-        <BaseSize>168,208</BaseSize>
-      </MauiImage>
-    </ItemGroup>
-
-    <ItemGroup>
       <None Include=".github\copilot-instructions.md" />
       <None Include=".github\request.md" />
     </ItemGroup>

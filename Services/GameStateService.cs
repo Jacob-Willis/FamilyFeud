@@ -14,11 +14,6 @@ namespace FamilyFeud.Services
 
         public SelectedTeam StartingTeam { get; set; }
 
-        public Answer? GetFirstAnswer(Team team)
-        {
-            return team.FirstAnswer;
-        }
-
         public List<Question> Questions { get; private set; } = new();
 
         // Currently active question (shared so audience window can display it)
@@ -42,9 +37,9 @@ namespace FamilyFeud.Services
         public GameStateService(IHasuraService hasura)
         {
             _hasura = hasura ?? throw new ArgumentNullException(nameof(hasura));
-            // Initialise with default names and colours
-            Team1 = new FamilyFeud.Models.Team("Team 1", "#ff6b6b");
-            Team2 = new FamilyFeud.Models.Team("Team 2", "#4d79ff");
+            // Initialise with default names
+            Team1 = new Team("Team 1");
+            Team2 = new Team("Team 2");
             SetGameMode(GameMode.PlayOff);
         }
 
@@ -289,19 +284,6 @@ namespace FamilyFeud.Services
             NotifyStateChanged();
         }
 
-        private int SumRevealedPointsForCurrentQuestion()
-        {
-            if (CurrentQuestion == null) return 0;
-            if (!_revealedAnswers.TryGetValue(CurrentQuestion.Id, out HashSet<int>? set) || set == null) return 0;
-            int sum = 0;
-            foreach (int id in set)
-            {
-                Answer? a = CurrentQuestion.Answers.Find(x => x.Id == id);
-                if (a != null) sum += a.Points;
-            }
-            return sum;
-        }
-
         public bool IsAnswerRevealed(int questionId, int answerId)
         {
             return _revealedAnswers.TryGetValue(questionId, out HashSet<int>? set) && set.Contains(answerId);
@@ -417,19 +399,6 @@ namespace FamilyFeud.Services
 
         public event Action? StateChanged;
 
-        public void IncrementScore(SelectedTeam team, int delta = 1)
-        {
-            if (team == SelectedTeam.Team1) Team1.Score += delta;
-            else if (team == SelectedTeam.Team2) Team2.Score += delta;
-            NotifyStateChanged();
-        }
-
-        public void SwitchTeam()
-        {
-            if (WhichTeamsTurn == SelectedTeam.Team1) WhichTeamsTurn = SelectedTeam.Team2;
-            else if (WhichTeamsTurn == SelectedTeam.Team2) WhichTeamsTurn = SelectedTeam.Team1;
-            NotifyStateChanged();
-        }
         public void SwitchTeam(SelectedTeam t)
         {
             // Accept Team1, Team2 or Random
@@ -456,12 +425,6 @@ namespace FamilyFeud.Services
             // set StartingTeam so we can alternate between teams
             StartingTeam = pick;
             return pick;
-        }
-
-        public void ResetScores()
-        {
-            ClearScores();
-            NotifyStateChanged();
         }
 
         private void ClearScores()
@@ -582,19 +545,6 @@ namespace FamilyFeud.Services
         Random,
         Team1,
         Team2
-    }
-
-    public struct PlayerTurn
-    {
-        public SelectedTeam CurrentTeam { get; set; }
-        public PlayerTurn(SelectedTeam team)
-        {
-            CurrentTeam = team;
-        }
-        public void Switch()
-        {
-            CurrentTeam = CurrentTeam == SelectedTeam.Team1 ? SelectedTeam.Team2 : SelectedTeam.Team1;
-        }
     }
 
     public enum GameLengthMode
