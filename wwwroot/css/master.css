@@ -6,6 +6,69 @@
     --ff-text: #222222;
 }
 
+/* Base rules kept from the Blazor template stylesheet (app.css, removed in #35).
+   They stay first so the rest of this file can still override them. */
+html, body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+a {
+    color: #006bb7;
+}
+
+.btn:focus, .btn:active:focus, .form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+/* Padding under the page for MainLayout's <article class="content"> */
+.content {
+    padding-top: 1.1rem;
+}
+
+/* FocusOnNavigate (Routes.razor) focuses the first h1; don't draw an outline round it */
+h1:focus {
+    outline: none;
+}
+
+/* Blazor's "An unhandled error has occurred" bar (#blazor-error-ui in index.html) */
+#blazor-error-ui {
+    color-scheme: light only;
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-sizing: border-box;
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
+
+/* iOS status bar spacer (.status-bar-safe-area in index.html) */
+.status-bar-safe-area {
+    display: none;
+}
+
+@supports (-webkit-touch-callout: none) {
+    .status-bar-safe-area {
+        display: flex;
+        position: sticky;
+        top: 0;
+        height: env(safe-area-inset-top);
+        background-color: #f7f7f7;
+        width: 100%;
+        z-index: 1;
+    }
+}
+
 /* Page layout helpers */
 .ff-page-header {
     position: fixed;
@@ -374,7 +437,6 @@
 }
 
 .layout-root {
-/*    background-image: url('/images/1_background.png');*/
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
