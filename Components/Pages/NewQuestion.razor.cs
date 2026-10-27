@@ -27,6 +27,12 @@ namespace FamilyFeud.Components.Pages
         private bool _isLoading = false;
         private bool _isEditing = false;
 
+        // Delete (#17): only offered once the question being edited has loaded
+        private bool _questionLoaded = false;
+        private bool _showDeleteConfirm = false;
+        private bool _isDeleting = false;
+        private string _deleteError = string.Empty;
+
         protected override async Task OnInitializedAsync()
         {
             // Check if we're editing an existing question
@@ -65,6 +71,7 @@ namespace FamilyFeud.Components.Pages
                         AnswerText = a.AnswerText,
                         Points = a.Points
                     }).ToList() ?? new List<AnswerInput> { new AnswerInput() };
+                    _questionLoaded = true;
                 }
                 else
                 {
@@ -292,6 +299,49 @@ namespace FamilyFeud.Components.Pages
         private void GoBack()
         {
             Navigation.NavigateTo("/questions");
+        }
+
+        private void AskDelete()
+        {
+            _deleteError = string.Empty;
+            _showDeleteConfirm = true;
+        }
+
+        private void CancelDelete()
+        {
+            if (_isDeleting) return;
+            _showDeleteConfirm = false;
+            _deleteError = string.Empty;
+        }
+
+        private async Task ConfirmDelete()
+        {
+            if (!QuestionId.HasValue || _isDeleting) return;
+
+            int questionId = QuestionId.Value;
+            _isDeleting = true;
+            _deleteError = string.Empty;
+
+            try
+            {
+                // Returns false if the question was already gone; either way it no longer exists.
+                await HasuraService.DeleteQuestionAsync(questionId);
+
+                // Keep the shared cache in step (mirrors HandleSubmit's create/update handling).
+                GameState.Questions.RemoveAll(q => q.Id == questionId);
+
+                _showDeleteConfirm = false;
+                Navigation.NavigateTo("/questions");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error deleting question {questionId}: {ex}");
+                _deleteError = $"Error deleting question: {ex.Message}";
+            }
+            finally
+            {
+                _isDeleting = false;
+            }
         }
 
         private class AnswerInput

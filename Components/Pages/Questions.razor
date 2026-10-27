@@ -1,5 +1,25 @@
 @page "/questions"
 
+@* Delete confirmation (#17). In-page modal because browser confirm() isn't reliable in BlazorWebView. *@
+@if (_pendingDelete != null)
+{
+    <div class="ff-modal-backdrop">
+        <div class="ff-modal ff-delete-modal">
+            <h4>Delete question?</h4>
+            <p class="mb-1">&ldquo;@_pendingDelete.QuestionText&rdquo;</p>
+            <p class="text-muted small">This deletes the question and its @_pendingDelete.Answers.Count answer(s). It can't be undone.</p>
+            @if (!string.IsNullOrEmpty(_deleteError))
+            {
+                <div class="alert alert-danger py-2">@_deleteError</div>
+            }
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="button" class="ff-modal-button ff-modal-button-cancel" @onclick="CancelDelete" disabled="@_isDeleting">Cancel</button>
+                <button type="button" class="ff-modal-button ff-modal-button-danger" @onclick="ConfirmDelete" disabled="@_isDeleting">@(_isDeleting ? "Deleting..." : "Delete")</button>
+            </div>
+        </div>
+    </div>
+}
+
 <div class="ff-page-header">
     <button class="ff-back-button" @onclick="GoBack">Back</button>
 </div>
@@ -38,10 +58,13 @@
                         <div class="ff-answer-container-heading">
                             <h5 class="ff-muted">@q.QuestionText</h5>
                             <small class="ff-muted-small">@q.Category</small>
-                            <button class="ff-button-secondary ff-button-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
+                            <div class="d-flex gap-2 align-items-start">
+                                <button class="ff-button-secondary ff-button-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
+                                <button class="ff-button-danger ff-button-sm" @onclick="() => AskDelete(q)">Delete</button>
+                            </div>
                         </div>
                         <ul class="ff-answer-container-answers mb-0">
-                            @foreach (var a in q.Answers.OrderBy(a => a.Points))
+                            @foreach (var a in q.Answers.OrderByDescending(a => a.Points))
                             {
                                 <li>
                                     <span class="ff-answer-container-points">@a.Points</span>
