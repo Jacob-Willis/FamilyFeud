@@ -1,17 +1,6 @@
-./* Home page styles */
+/* Home page styles */
 /* (master styles are included globally from wwwroot/index.html) */
-.ff-home-hero {
-    
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: 100px;
-}
-
 .ff-home-actions {
-    display: flex;
-    margin-top: auto;
-    flex-direction: row;
     padding-top: 250px;
 }
 
@@ -20,9 +9,8 @@
     margin-top: 40px;
     flex-direction: column;
     width: 600px;
+    max-width: 100%; /* keep "The" and "Quiz" on screen in narrow windows */
     line-height: 0.9;
-    font-weight: bolder;
-    letter-spacing: -2px;
     font-weight: 500;
     font-family: 'Montserrat', 'Poppins', 'Nunito';
     letter-spacing: 2px;

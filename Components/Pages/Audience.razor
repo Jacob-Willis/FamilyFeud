@@ -41,14 +41,14 @@ else
 {
     <div class="ff-container ff-container-border">
         <div class="Teams d-flex gap-5">
-        <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
-            <p class="ff-muted-large teamname">@GameState.Team1.Name</p>
-            <p class="ff-muted-large teamscore">@GameState.Team1.Score</p>
-        </div>
-        <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
-            <p class="ff-muted-large teamname">@GameState.Team2.Name</p>
-            <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
-        </div>
+            <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
+                <p class="ff-muted-large teamname">@GameState.Team1.Name</p>
+                <p class="ff-muted-large teamscore">@GameState.Team1.Score</p>
+            </div>
+            <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team2 ? "selected" : "")">
+                <p class="ff-muted-large teamname">@GameState.Team2.Name</p>
+                <p class="ff-muted-large teamscore">@GameState.Team2.Score</p>
+            </div>
         </div>
         <p class="ff-muted-small mt-2 mb-0">
             @GameState.GameProgressText
@@ -77,6 +77,6 @@ else
     }
     else
     {
-        <p>No question loaded</p>
+        <p class="ff-muted">No question loaded</p>
     }
 }

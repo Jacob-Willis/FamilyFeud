@@ -19,6 +19,37 @@
     align-self: stretch;
 }
 
+/* Footer strike count: label and count on one line */
+.ff-footer-strikes {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+/* Room under the board for the fixed footer, which wraps to more rows below 1200px (flex-xl-nowrap) */
+.ff-footer-spacer {
+    height: 6rem;
+}
+
+/* The fixed Back button only overlaps the first panel in narrow windows */
+.ff-header-spacer {
+    display: none;
+}
+
+@media (max-width: 1199.98px) {
+    .ff-footer-spacer {
+        height: 12rem;
+    }
+}
+
+@media (max-width: 900px) {
+    .ff-header-spacer {
+        display: block;
+        height: 3.5rem;
+    }
+}
+
 /* Host-only question picker (#38): a wider .ff-modal with a scrolling list */
 .ff-picker {
     width: 640px;
@@ -37,9 +68,16 @@
     color: #555;
 }
 
+/* "N questions" count: dark text on the white modal (the shared .ff-muted-small is white) */
+.ff-picker-count {
+    color: #555;
+    font-size: 0.9rem;
+}
+
+/* Sits on the tile's top edge so it doesn't cover the struck-through answer text */
 .ff-answer-item .revealed-badge {
     position: absolute;
-    top: 4px;
+    top: -0.55rem;
     right: 6px;
     padding: 0 0.4rem;
     font-size: 0.7rem;

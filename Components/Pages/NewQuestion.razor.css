@@ -6,6 +6,11 @@
     display: flex;
 }
 
+/* Inner padding so the labels, inputs and answers table don't touch the panel's edge */
+.ff-form-container > .ff-container-border {
+    padding: 0.75rem;
+}
+
 .ff-form-label {
     color: ButtonHighlight;
     font-weight: 600;
@@ -21,7 +26,7 @@
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     margin: 0.5rem;
-    width: 95%;
+    width: calc(100% - 1rem); /* full width inside the 0.5rem margins, lined up with the answers table */
     box-sizing: border-box;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
@@ -42,6 +47,7 @@
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     margin: 0.5rem;
+    width: calc(100% - 1rem);
 }
 
 .ff-answers-table thead th {
@@ -65,7 +71,7 @@
 .ff-form-actions {
     justify-content: center;
     margin-top: 1.25rem;
-    padding-bottom: 1.25rem;
+    padding-bottom: 0.5rem;
 }
 
 .alert {

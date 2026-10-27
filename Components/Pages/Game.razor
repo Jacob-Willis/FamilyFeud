@@ -6,6 +6,9 @@
     <button class="ff-btn" @onclick="GoBack" disabled="@(IsChoiceModalOpen)">Back</button>
 </div>
 
+@* Narrow windows only: pushes the first panel below the fixed Back button *@
+<div class="ff-header-spacer" aria-hidden="true"></div>
+
 @* Blocking Play/Pass modal after the face-off. Its backdrop covers the page and Back is disabled while it is open. *@
 @if (GameState.PlayoffAwaitingChoice && GameState.WhichTeamsTurn != SelectedTeam.Random)
 {
@@ -58,7 +61,7 @@
                 </select>
                 <input class="form-control" type="search" placeholder="Search questions or categories" aria-label="Search questions or categories" @bind="PickerSearch" @bind:event="oninput" />
             </div>
-            <p class="ff-muted-small mb-2">@picks.Count @(picks.Count == 1 ? "question" : "questions")</p>
+            <p class="ff-picker-count mb-2">@picks.Count @(picks.Count == 1 ? "question" : "questions")</p>
             @if (picks.Count == 0)
             {
                 <p class="ff-picker-empty mb-2">@(inCategory == 0
@@ -186,8 +189,11 @@
     </div>
 }
 
+@* Keeps the bottom of the board scrollable above the fixed footer *@
+<div class="ff-footer-spacer" aria-hidden="true"></div>
+
 <div class="ff-page-footer fixed-bottom">
-    <div class="ff-btn-row flex-nowrap w-100">
+    <div class="ff-btn-row flex-xl-nowrap w-100">
         <div class="d-flex align-items-center">
             <span class="me-2">Remaining questions in category:</span>
             <span>@QuestionsInSelectedCategory().Count</span>
@@ -206,6 +212,9 @@
         <button class="ff-btn" @onclick="() => { if (!IsChoiceModalOpen) OpenGameWindow(); }">@(IsAudienceOpen ? "Close game window" : "Open game window")</button>
         <button class="ff-btn" @onclick="RequestRevealAll">Reveal All Answers</button>
         <button class="ff-btn" disabled="@(!CanStrike)" @onclick="() => { if (CanStrike) GameState.HostStrike(); }">Strike</button>
-        <span class="ff-muted">Strikes:</span><span class="ff-muted-small"> @((GameState.WhichTeamsTurn == SelectedTeam.Team1) ? ($"{GameState.Team1.IncorrectStrikes} /3") : ($"{GameState.Team2.IncorrectStrikes} /3"))</span>
+        <div class="ff-footer-strikes">
+            <span class="ff-muted mb-0">Strikes:</span>
+            <span class="ff-muted-small mb-0">@((GameState.WhichTeamsTurn == SelectedTeam.Team1) ? ($"{GameState.Team1.IncorrectStrikes} /3") : ($"{GameState.Team2.IncorrectStrikes} /3"))</span>
+        </div>
     </div>
 </div>
