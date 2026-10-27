@@ -112,8 +112,9 @@
 }
 
 <div class="ff-container ff-container-border">
+    @* Panel headings (#56) have no margin of their own: the panel's flex gap is the only space below them *@
+    <h3 class="ff-muted mb-0">Teams</h3>
     <div class="Teams">
-        <h3 class="ff-muted">Teams</h3>
         <div class="d-flex gap-5">
             <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
                 <strong>@GameState.Team1.Name</strong>
@@ -130,14 +131,14 @@
     @if (CurrentQuestion != null)
     {
         <div class="ff-question">
-            <p class="ff-muted">Question:</p>
-            <p class="ff-muted-small">@CurrentQuestion.QuestionText</p>
+            <p class="ff-muted mb-0">Question:</p>
+            <p class="ff-muted-small mb-0">@CurrentQuestion.QuestionText</p>
         </div>
     }
     @* Mode stays PointSteal after the round ends, so also check IsRoundFinished (#40) *@
     @if (GameState.Mode == GameMode.PointSteal && !GameState.IsRoundFinished)
     {
-        <div class="ff-muted-small">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
+        <div class="ff-muted-small mb-0">Steal attempt in progress. Reveal answer for stealing team or click Strike to fail.</div>
     }
     @if (!string.IsNullOrEmpty(InfoMessage))
     {
@@ -146,7 +147,7 @@
     @* Loading questions from Hasura failed: show why and let the host try again (#15) *@
     @if (GameState.IsLoading)
     {
-        <div class="d-flex align-items-center gap-2 ff-muted-small" role="status">
+        <div class="d-flex align-items-center gap-2 ff-muted-small mb-0" role="status">
             <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
             <span>Loading questions...</span>
         </div>
@@ -171,7 +172,7 @@
 @if (CurrentQuestion != null)
 {
     <div class="ff-container ff-container-border">
-        <p class="ff-muted">Answers</p>
+        <p class="ff-muted mb-0">Answers</p>
         <div class="ff-answer-box">
             @foreach (Answer a in CurrentQuestion.Answers)
             {
