@@ -104,6 +104,19 @@ namespace FamilyFeud.Components.Pages
                 SelectedCategory = "All";
         }
 
+        // Remaining questions in the selected category ("All" means every remaining question). LoadQuestion and the
+        // footer count both use this so they always agree (#31). Categories are trimmed and compared ignoring case,
+        // the same way BuildCategories groups them for the dropdown.
+        private List<Question> QuestionsInSelectedCategory()
+        {
+            if (string.IsNullOrEmpty(SelectedCategory) || SelectedCategory == "All")
+                return RemainingQuestions;
+
+            return RemainingQuestions
+                .Where(q => string.Equals((q.Category ?? string.Empty).Trim(), SelectedCategory, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         // "Round X of N" or "First to N points", shown under the round pool
         private string GameProgressText => GameState.GameLength == GameLengthMode.Rounds
             ? $"Round {GameState.CurrentRoundNumber} of {GameState.TotalRounds}"
@@ -133,10 +146,7 @@ namespace FamilyFeud.Components.Pages
             }
 
             // Filter by selected category if applicable
-            bool filtered = !string.IsNullOrEmpty(SelectedCategory) && SelectedCategory != "All";
-            List<Question> pool = filtered
-                ? RemainingQuestions.Where(q => string.Equals(q.Category ?? string.Empty, SelectedCategory, StringComparison.OrdinalIgnoreCase)).ToList()
-                : RemainingQuestions;
+            List<Question> pool = QuestionsInSelectedCategory();
 
             if (pool.Count == 0)
             {

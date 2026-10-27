@@ -132,7 +132,7 @@
     <div class="d-flex gap-2 align-items-center w-100">
         <div class="d-flex align-items-center">
             <span class="me-2">Remaining questions in category:</span>
-            <span>@(SelectedCategory == "All" ? RemainingQuestions.Count() : RemainingQuestions.Where(q => q.Category == SelectedCategory).Count())</span>
+            <span>@QuestionsInSelectedCategory().Count</span>
         </div>
         <div class="me-auto">
             <select class="form-select" style="min-width:200px;" @bind="SelectedCategory" disabled="@(IsChoiceModalOpen || GameState.IsGameOver)">
