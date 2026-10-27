@@ -41,7 +41,7 @@
                             <button class="ff-button-secondary ff-button-sm" @onclick="() => EditQuestion(q.Id)">Edit</button>
                         </div>
                         <ul class="ff-answer-container-answers mb-0">
-                            @foreach (var a in q.Answers.OrderBy(a => a.Points))
+                            @foreach (var a in q.Answers.OrderByDescending(a => a.Points))
                             {
                                 <li>
                                     <span class="ff-answer-container-points">@a.Points</span>

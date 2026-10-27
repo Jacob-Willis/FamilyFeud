@@ -21,9 +21,10 @@ namespace FamilyFeud.Components.Pages
         private List<string> GetUniqueCategories()
         {
             return _questions
-                .Select(q => q.Category)
-                .Distinct()
-                .OrderBy(c => c)
+                .Where(q => !string.IsNullOrWhiteSpace(q.Category))
+                .Select(q => q.Category!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(c => c, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
 
@@ -37,10 +38,10 @@ namespace FamilyFeud.Components.Pages
                 filtered = filtered.Where(q => q.QuestionText.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
             }
 
-            // Filter by category (if a specific category is selected)
+            // Filter by category (case-insensitive, matching the Game page)
             if (!string.IsNullOrEmpty(_selectedCategory))
             {
-                filtered = filtered.Where(q => q.Category == _selectedCategory);
+                filtered = filtered.Where(q => string.Equals(q.Category?.Trim(), _selectedCategory, StringComparison.OrdinalIgnoreCase));
             }
 
             return filtered.ToList();
