@@ -75,6 +75,7 @@ Priority: **P1** = wrong game behaviour or a security problem · **P2** = broken
 | 59 | Stale modal comments, dead CSS and unused variables in `master.css` | 2026-10-28 | Updated comments that called the modals white or Play/Pass-only; removed the unused `.audience-controls` and `.layout-root` rules and the unused `--ff-primary`/`--ff-accent`/`--ff-bg`/`--ff-text` variables. Found during #52. |
 | 60 | The Game footer category select had no accessible name | 2026-10-28 | Added `aria-label="Question category"`. Found during #52. |
 | 61 | The Audience window couldn't open on Mac Catalyst (no multi-scene support declared) | 2026-10-28 | Added `UIApplicationSceneManifest` (multiple scenes, default MAUI scene configuration) to `Platforms/MacCatalyst/Info.plist` and a `SceneDelegate` (`MauiUISceneDelegate`) in `Platforms/MacCatalyst/SceneDelegate.cs`. Builds for `net10.0-maccatalyst` on Windows; not tested on a real Mac. |
+| 63 | `dotnet publish -f net10.0-maccatalyst` failed on the Mac: "SupportedOSPlatformVersion 15.0 is lower than the minimum value 17.0" | 2026-10-28 | Raised the Mac Catalyst `SupportedOSPlatformVersion` in `FamilyFeud.csproj` from 15.0 to 17.0 (macOS 14 Sonoma or later). iOS stays at 15.0. Found when publishing on a real Mac. |
 
 ## Test notes (2026-10-28)
 
