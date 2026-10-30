@@ -112,6 +112,8 @@ dotnet run -f net10.0-windows10.0.19041.0
 
 Other target frameworks: `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`.
 
+On a Mac, run `./scripts/mac.sh` from the repo to pull the latest changes, build the Mac Catalyst app and launch it. It also takes `build` (build only), `publish` (Release build), `clean` (delete `bin` and `obj`, then run) and `--no-pull` (skip the pull). Run `./scripts/mac.sh --help` for details.
+
 ## Host and audience windows
 
 The app uses two windows that share the same game state:

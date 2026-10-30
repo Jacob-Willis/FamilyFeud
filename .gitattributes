@@ -61,3 +61,6 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Shell scripts keep LF line endings so they run on macOS and Linux
+*.sh text eol=lf

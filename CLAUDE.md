@@ -17,6 +17,8 @@ dotnet run -f net10.0-windows10.0.19041.0
 
 Other TFMs: `net10.0-android`, `net10.0-ios`, `net10.0-maccatalyst`.
 
+On the Mac, `./scripts/mac.sh` pulls, builds and launches the Mac Catalyst app (also `build`, `publish`, `clean`, and `--no-pull` to skip the pull).
+
 **Setup:** Copy `appsettings.example.json` to `appsettings.json`, then fill in the Hasura endpoint and admin secret. `appsettings.json` is git-ignored and gets embedded in the build; `Services/Hasura/HasuraSettings.cs` reads it. Never commit the secret or put it back into source. The project has no test projects. Code style is set in `.editorconfig` (suggestion-level only, so it never breaks the build); `dotnet format FamilyFeud.csproj --no-restore` works on this project and should leave no changes. In Debug builds, Blazor WebView dev tools are enabled.
 
 ## Issue tracking
