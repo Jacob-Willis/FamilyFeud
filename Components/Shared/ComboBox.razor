@@ -1,0 +1,52 @@
+@* Typeable dropdown (#64): type any value or pick one from Options. Replaces <input list> + <datalist>,
+   whose suggestions WKWebView on Mac Catalyst doesn't show. *@
+<div class="ff-combobox" @onfocusout="CloseList">
+    <input type="text"
+           @ref="_input"
+           id="@InputId"
+           class="ff-combobox-input @InputClass"
+           role="combobox"
+           autocomplete="off"
+           aria-autocomplete="list"
+           aria-expanded="@(IsListShown ? "true" : "false")"
+           aria-controls="@ListId"
+           aria-activedescendant="@ActiveOptionId"
+           form="@DetachedFormId"
+           placeholder="@Placeholder"
+           value="@Value"
+           @oninput="OnInputAsync"
+           @onkeydown="OnKeyDownAsync" />
+
+    @* Not in the tab order, and mousedown's default is prevented so clicking it doesn't take focus from the input *@
+    <button type="button"
+            class="ff-combobox-toggle @(IsListShown ? "open" : "")"
+            tabindex="-1"
+            aria-label="Show options"
+            aria-controls="@ListId"
+            aria-expanded="@(IsListShown ? "true" : "false")"
+            @onmousedown="OnToggleMouseDownAsync"
+            @onmousedown:preventDefault>
+        <span class="ff-combobox-chevron" aria-hidden="true"></span>
+    </button>
+
+    @if (IsListShown)
+    {
+        @* Options are picked on mousedown with the default prevented, so the input keeps focus and the
+           focusout that closes the list doesn't fire first *@
+        <ul class="ff-combobox-list" id="@ListId" role="listbox" @onmousedown:preventDefault>
+            @for (int i = 0; i < _filtered.Count; i++)
+            {
+                int index = i;
+                string option = _filtered[index];
+                <li id="@OptionId(index)"
+                    class="ff-combobox-option @(index == _highlightedIndex ? "highlighted" : "")"
+                    role="option"
+                    aria-selected="@(index == _highlightedIndex ? "true" : "false")"
+                    @onmousedown="(MouseEventArgs e) => OnOptionMouseDownAsync(e, option)"
+                    @onmousedown:preventDefault>
+                    @option
+                </li>
+            }
+        </ul>
+    }
+</div>

@@ -1,0 +1,108 @@
+/* Typeable dropdown (#64). The list is positioned against this wrapper, so it lines up with the input. */
+.ff-combobox {
+    position: relative;
+}
+
+/* Same look as the New Question page's .ff-form-input (NewQuestion.razor.css); pass InputClass="form-control" for
+   Bootstrap's base, like those inputs. The right padding leaves room for the chevron. */
+.ff-combobox-input {
+    width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    padding: 0.5rem 2.5rem 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    color: ButtonHighlight;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ff-combobox-input:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: ButtonHighlight;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
+}
+
+.ff-combobox-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* The chevron toggle sits inside the input's right edge. A widget, not an action button, so not .ff-btn. */
+.ff-combobox-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--ff-text-muted);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.ff-combobox-toggle:hover {
+    color: #ffffff;
+}
+
+/* A CSS chevron: two borders of a small square, turned to point down (up while the list is open) */
+.ff-combobox-chevron {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.15s ease;
+}
+
+.ff-combobox-toggle.open .ff-combobox-chevron {
+    transform: translateY(2px) rotate(225deg);
+}
+
+/* The list: a dark panel like the modals, above the rest of the form (the answers table) */
+.ff-combobox-list {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    max-height: 240px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color-scheme: dark;
+    color: #ffffff;
+    background: var(--ff-modal-bg);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.ff-combobox-option {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    overflow-wrap: anywhere;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+
+.ff-combobox-option:last-child {
+    border-bottom: 0;
+}
+
+.ff-combobox-option:hover,
+.ff-combobox-option.highlighted {
+    background: rgba(255, 255, 255, 0.14);
+}
+
+/* The keyboard highlight also gets the gold ring of the question picker's focused row */
+.ff-combobox-option.highlighted {
+    box-shadow: inset 0 0 0 2px rgba(255, 215, 0, 0.6);
+}

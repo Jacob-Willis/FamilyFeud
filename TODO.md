@@ -76,6 +76,7 @@ Priority: **P1** = wrong game behaviour or a security problem · **P2** = broken
 | 60 | The Game footer category select had no accessible name | 2026-10-28 | Added `aria-label="Question category"`. Found during #52. |
 | 61 | The Audience window couldn't open on Mac Catalyst (no multi-scene support declared) | 2026-10-28 | Added `UIApplicationSceneManifest` (multiple scenes, default MAUI scene configuration) to `Platforms/MacCatalyst/Info.plist` and a `SceneDelegate` (`MauiUISceneDelegate`) in `Platforms/MacCatalyst/SceneDelegate.cs`. Builds for `net10.0-maccatalyst` on Windows; not tested on a real Mac. |
 | 63 | `dotnet publish -f net10.0-maccatalyst` failed on the Mac: "SupportedOSPlatformVersion 15.0 is lower than the minimum value 17.0" | 2026-10-28 | Raised the Mac Catalyst `SupportedOSPlatformVersion` in `FamilyFeud.csproj` from 15.0 to 17.0 (macOS 14 Sonoma or later). iOS stays at 15.0. Found when publishing on a real Mac. |
+| 64 | The Category field on New Question couldn't pick an existing category on the Mac (WKWebView doesn't show `<datalist>` suggestions) | 2026-10-30 | New reusable `Components/Shared/ComboBox` replaces the datalist: type any value, or pick from a dark list (chevron toggle, filters as you type, ↑/↓/Enter/Escape, closes on blur). While an option is highlighted the input points at a non-existent `form`, so Enter picks the option instead of submitting. Checked over WebView2 on Windows; builds for Mac Catalyst but not run on a Mac. |
 
 ## Test notes (2026-10-28)
 

@@ -48,13 +48,11 @@
 
             <div>
                 <label for="category" class="form-label ff-form-label">Category</label>
-                <input type="text" class="form-control ff-form-input" id="category" list="categoryList" placeholder="Select or type a category" @bind="_category" />
-                <datalist id="categoryList">
-                    @foreach (string cat in _categories)
-                    {
-                        <option value="@cat" />
-                    }
-                </datalist>
+                @* ComboBox, not <datalist>: WKWebView on Mac Catalyst doesn't show datalist suggestions (#64).
+                   m-2 gives it the 0.5rem margins of .ff-form-input, so it lines up with the other inputs. *@
+                <div class="m-2">
+                    <ComboBox Id="category" @bind-Value="_category" Options="_categories" Placeholder="Select or type a category" InputClass="form-control" />
+                </div>
             </div>
 
             <div>
