@@ -84,6 +84,7 @@ h1:focus {
 .ff-team-summary {
     color: rgba(200,200,200,0.45);
     justify-items: center;
+    text-align: center;
 }
 
 .ff-team-summary.selected {

@@ -115,7 +115,7 @@
     @* Panel headings (#56) have no margin of their own: the panel's flex gap is the only space below them *@
     <h3 class="ff-muted mb-0">Teams</h3>
     <div class="Teams">
-        <div class="d-flex gap-5">
+        <div class="d-flex justify-content-center gap-5">
             <div class="ff-team-summary @(GameState.WhichTeamsTurn == SelectedTeam.Team1 ? "selected" : "")">
                 <strong>@GameState.Team1.Name</strong>
                 <div>Score: @GameState.Team1.Score</div>

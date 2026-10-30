@@ -8,7 +8,7 @@
     flex-direction: row;
     flex-wrap: wrap; /* narrow windows: wrap instead of pushing New Question off screen */
     gap: 1rem;
-    margin: 1rem;
+    margin: 1rem auto;
     max-width: 600px;
     align-items: center;
 }
@@ -50,7 +50,7 @@
 }
 
 .ff-answer-container {
-    margin: 1rem;
+    margin: 1rem auto;
     border: 1px solid rgba(255,255,255,0.25);
     backdrop-filter: blur(5px);
     border-radius: 12px;

@@ -2,11 +2,12 @@
 /* (master styles are included globally from wwwroot/index.html) */
 .ff-home-actions {
     padding-top: 250px;
+    justify-content: center;
 }
 
 .title {
     display: flex;
-    margin-top: 40px;
+    margin: 40px auto 0 auto;
     flex-direction: column;
     width: 600px;
     max-width: 100%; /* keep "The" and "Quiz" on screen in narrow windows */
