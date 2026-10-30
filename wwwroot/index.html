@@ -10,12 +10,27 @@
     <link rel="stylesheet" href="FamilyFeud.styles.css" />
     <link rel="icon" href="data:,">
     <style>
-        html, body {
-            background-image: url('Images/background2.png');
-            background-attachment: fixed;
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: center;
+        /* #65: iOS/Mac WebKit ignores background-attachment: fixed, so the image
+           sits on a fixed full-viewport layer instead. html is dark so nothing shows
+           white; body stays transparent (overriding Bootstrap's white) so the layer
+           shows through, and body must not get position + z-index (stacking context). */
+        html {
+            min-height: 100%;
+            background-color: #0b0d1a;
+        }
+
+        body {
+            min-height: 100%;
+            background-color: transparent;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: url('Images/background2.png') center / cover no-repeat;
+            pointer-events: none;
         }
     </style>
 </head>
