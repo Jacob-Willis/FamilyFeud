@@ -13,17 +13,33 @@
     align-items: center;
 }
 
+/* appearance: none drops WebKit's native control look on the Mac (#67). The text is a fixed colour because
+   the ButtonHighlight system colour goes grey under color-scheme: dark (#f0f0f0 is what WebView2 showed). */
 .ff-search-input,
 .ff-category-select {
+    -webkit-appearance: none;
+    appearance: none;
     padding: 0.55rem 1rem;
     border: 1px solid rgba(255,255,255,0.25);
     border-radius: 10px;
-    background: rgba(0,0,0,0.35);
+    background-color: rgba(0,0,0,0.35);
     backdrop-filter: blur(5px);
-    color: ButtonHighlight;
+    color: #f0f0f0;
+    color-scheme: dark;
+    font-family: inherit;
     font-size: 1rem;
     font-weight: 500;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    line-height: 1.5;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+/* Our own arrow (master.css) replaces the native one; hover and focus change only background-color so it stays */
+.ff-category-select {
+    padding-right: 2.25rem;
+    background-image: var(--ff-select-chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
 }
 
 .ff-search-input::placeholder {
@@ -33,20 +49,20 @@
 .ff-search-input:focus,
 .ff-category-select:focus {
     outline: none;
-    background: rgba(255,255,255,0.24);
+    background-color: rgba(255,255,255,0.24);
     border-color: rgba(255,255,255,0.4);
     transform: translateY(-1px);
 }
 
 .ff-search-input:hover,
 .ff-category-select:hover {
-    background: rgba(255,255,255,0.15);
+    background-color: rgba(255,255,255,0.15);
     border-color: rgba(255,255,255,0.35);
 }
 
 .ff-category-select option {
     background: rgba(0,0,0,0.8);
-    color: ButtonHighlight;
+    color: #f0f0f0;
 }
 
 .ff-answer-container {

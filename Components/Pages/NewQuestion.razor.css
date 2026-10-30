@@ -19,10 +19,18 @@
     display: block;
 }
 
+/* Same look on the Mac's WebKit as in WebView2 (#67): no native appearance, and color-scheme: dark for the number
+   spinners and category suggestions. The text is a fixed colour because the ButtonHighlight system colour goes grey
+   under color-scheme: dark (#f0f0f0 is what WebView2 showed). */
 .ff-form-input {
+    -webkit-appearance: none;
+    appearance: none;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.25);
-    color: ButtonHighlight;
+    color: #f0f0f0;
+    color-scheme: dark;
+    font-family: inherit;
+    line-height: 1.5;
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     margin: 0.5rem;
@@ -34,7 +42,7 @@
 .ff-form-input:focus {
     background: rgba(255, 255, 255, 0.15);
     border-color: rgba(255, 255, 255, 0.5);
-    color: ButtonHighlight;
+    color: #f0f0f0;
     box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.1);
 }
 

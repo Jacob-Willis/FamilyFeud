@@ -3,6 +3,8 @@
     /* Dark panels (#52): modal fill, and the light muted text used on them */
     --ff-modal-bg: rgba(20, 22, 34, 0.94);
     --ff-text-muted: rgba(255, 255, 255, 0.7);
+    /* Light arrow for dark selects drawn with appearance: none (#67), the same chevron as Bootstrap's dark .form-select */
+    --ff-select-chevron: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23dee2e6' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
 }
 
 /* Base rules kept from the Blazor template stylesheet (app.css, removed in #35).
@@ -415,9 +417,13 @@ h1:focus {
 }
 
 /* Dark select and text input (#52), for controls in modals and the Game footer. Same look as the Questions page's
-   search box and category select. color-scheme: dark makes the native dropdown list and scrollbar dark too. */
+   search box and category select. color-scheme: dark makes the native dropdown list and scrollbar dark too.
+   appearance: none drops WebKit's native look on the Mac (#67): inner shadow, search-field rounding and the
+   pop-up button that ignores the dark fill, so the controls render the same as in WebView2. */
 .ff-select,
 .ff-input {
+    -webkit-appearance: none;
+    appearance: none;
     padding: 0.55rem 1rem;
     border: 1px solid rgba(255,255,255,0.25);
     border-radius: 10px;
@@ -430,6 +436,15 @@ h1:focus {
     font-weight: 500;
     line-height: 1.5;
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.15s ease;
+}
+
+/* Our own arrow replaces the native one; hover and focus change only background-color so it stays */
+.ff-select {
+    padding-right: 2.25rem;
+    background-image: var(--ff-select-chevron);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
 }
 
 .ff-input {
