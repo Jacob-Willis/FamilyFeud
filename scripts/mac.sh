@@ -87,7 +87,8 @@ do_run() {
     pull
     check_prereqs
     echo "==> Building and launching ($TFM)"
-    dotnet build -t:Run -f "$TFM"
+    # -t:Run alone only launches; the Run target doesn't depend on Build.
+    dotnet build -t:Build,Run -f "$TFM"
 }
 
 do_build() {
